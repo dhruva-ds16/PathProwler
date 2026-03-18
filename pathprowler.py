@@ -163,6 +163,7 @@ class GobusterScanner:
             "--timeout", f"{self.timeout}s",
             "-k",  # Skip SSL verification
             "-s", self.status_codes,  # Status codes to match
+            "-b", "",  # Clear default blacklist to avoid conflict
         ]
         
         # Only add output file if not in display-only mode

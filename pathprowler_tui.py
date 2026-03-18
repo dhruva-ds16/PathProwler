@@ -53,22 +53,35 @@ class PathProwlerTUI:
             'subdomains': 0,
             'start_time': None
         }
+        self.results = {
+            'directories': [],
+            'files': [],
+            'vhosts': [],
+            'subdomains': []
+        }
         self.scan_process = None
         self.running = False
     
     def show_banner(self):
-        """Display welcome banner"""
-        banner = Text()
-        banner.append("🐾 ", style="bold magenta")
-        banner.append("PathProwler", style="bold cyan")
-        banner.append(" v2.0\n", style="dim")
-        banner.append("Prowl through paths and discover hidden treasures", style="italic dim")
+        """Display welcome banner with ASCII art"""
+        ascii_art = """
+[bold cyan]
+ ██████╗  █████╗ ████████╗██╗  ██╗██████╗ ██████╗  ██████╗ ██╗    ██╗██╗     ███████╗██████╗ 
+ ██╔══██╗██╔══██╗╚══██╔══╝██║  ██║██╔══██╗██╔══██╗██╔═══██╗██║    ██║██║     ██╔════╝██╔══██╗
+ ██████╔╝███████║   ██║   ███████║██████╔╝██████╔╝██║   ██║██║ █╗ ██║██║     █████╗  ██████╔╝
+ ██╔═══╝ ██╔══██║   ██║   ██╔══██║██╔═══╝ ██╔══██╗██║   ██║██║███╗██║██║     ██╔══╝  ██╔══██╗
+ ██║     ██║  ██║   ██║   ██║  ██║██║     ██║  ██║╚██████╔╝╚███╔███╔╝███████╗███████╗██║  ██║
+ ╚═╝     ╚═╝  ╚═╝   ╚═╝   ╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝ ╚══════╝╚══════╝╚═╝  ╚═╝
+[/]
+[bold magenta]                    🐾 Prowl through paths and discover hidden treasures 🎯[/]
+[dim]                                        v2.0[/]
+"""
         
         panel = Panel(
-            Align.center(banner),
+            Align.center(ascii_art),
             box=box.DOUBLE,
             border_style="cyan",
-            padding=(1, 2)
+            padding=(0, 2)
         )
         console.print(panel)
         console.print()
@@ -152,11 +165,18 @@ class PathProwlerTUI:
                 default="/usr/share/wordlists/seclists",
                 style=custom_style
             ).ask()
+            
+            self.config['verbose'] = questionary.confirm(
+                "Enable verbose mode (show all logs)?",
+                default=False,
+                style=custom_style
+            ).ask()
         else:
             self.config['threads'] = "50"
             self.config['timeout'] = "10"
             self.config['extensions'] = "php,html,txt,asp,jsp"
             self.config['wordlist'] = "/usr/share/wordlists/seclists"
+            self.config['verbose'] = False
         
         return True
     
@@ -249,9 +269,12 @@ class PathProwlerTUI:
             "-t", self.config['threads'],
             "--timeout", self.config['timeout'],
             "-w", self.config['wordlist'],
-            "--display-only",
-            "-v"
+            "--display-only"
         ]
+        
+        # Add verbose flag if enabled
+        if self.config.get('verbose', False):
+            cmd.append("-v")
         
         if 'domain' in self.config and self.config['domain']:
             cmd.extend(["-d", self.config['domain']])
@@ -292,25 +315,32 @@ class PathProwlerTUI:
                     if not line:
                         continue
                     
-                    # Update stats
+                    # Update stats and store results
                     if "[DIR]" in line:
                         self.stats['directories'] += 1
+                        self.results['directories'].append(line)
                         console.print(f"[green]✓[/] {line}")
                     elif "[FILES]" in line:
                         self.stats['files'] += 1
+                        self.results['files'].append(line)
                         console.print(f"[yellow]✓[/] {line}")
                     elif "[VHOST]" in line:
                         self.stats['vhosts'] += 1
+                        self.results['vhosts'].append(line)
                         console.print(f"[magenta]✓[/] {line}")
                     elif "[DNS]" in line:
                         self.stats['subdomains'] += 1
+                        self.results['subdomains'].append(line)
                         console.print(f"[cyan]✓[/] {line}")
                     elif "ERROR" in line or "error" in line:
+                        # Always show errors
                         console.print(f"[red]✗[/] {line}")
-                    elif "completed" in line or "SUCCESS" in line:
-                        console.print(f"[green]✓[/] {line}")
-                    else:
-                        console.print(f"[dim]•[/] {line}")
+                    elif self.config.get('verbose', False):
+                        # Only show other logs in verbose mode
+                        if "completed" in line or "SUCCESS" in line:
+                            console.print(f"[green]✓[/] {line}")
+                        else:
+                            console.print(f"[dim]•[/] {line}")
                     
                     # Update live display
                     live.update(self.create_stats_panel())
@@ -318,7 +348,8 @@ class PathProwlerTUI:
                 self.scan_process.wait()
             
             self.stats['status'] = "Completed"
-            console.print(f"\n{self.create_stats_panel()}")
+            console.print()
+            console.print(self.create_stats_panel())
             console.print("\n[bold green]✓ Scan completed successfully![/]\n")
             
         except KeyboardInterrupt:
@@ -331,6 +362,122 @@ class PathProwlerTUI:
             self.stats['status'] = "Error"
         finally:
             self.running = False
+    
+    def view_results(self):
+        """Interactive results viewer"""
+        if not any([self.results['directories'], self.results['files'], 
+                   self.results['vhosts'], self.results['subdomains']]):
+            console.print("[yellow]No results to display.[/]")
+            return
+        
+        while True:
+            console.print()
+            choice = questionary.select(
+                "What would you like to view?",
+                choices=[
+                    f"📁 Directories ({len(self.results['directories'])})",
+                    f"📄 Files ({len(self.results['files'])})",
+                    f"🌐 VHosts ({len(self.results['vhosts'])})",
+                    f"🔍 Subdomains ({len(self.results['subdomains'])})",
+                    "📊 View All Statistics",
+                    "🔙 Back to Main Menu"
+                ],
+                style=custom_style
+            ).ask()
+            
+            if not choice or "Back" in choice:
+                break
+            
+            console.print()
+            
+            if "Directories" in choice:
+                self.display_results_table("Directories", self.results['directories'], "green")
+            elif "Files" in choice:
+                self.display_results_table("Files", self.results['files'], "yellow")
+            elif "VHosts" in choice:
+                self.display_results_table("VHosts", self.results['vhosts'], "magenta")
+            elif "Subdomains" in choice:
+                self.display_results_table("Subdomains", self.results['subdomains'], "cyan")
+            elif "Statistics" in choice:
+                console.print(self.create_stats_panel())
+            
+            console.print()
+            if not questionary.confirm("View more results?", default=True, style=custom_style).ask():
+                break
+    
+    def display_results_table(self, title: str, results: list, color: str):
+        """Display results in a formatted table"""
+        if not results:
+            console.print(f"[yellow]No {title.lower()} found.[/]")
+            return
+        
+        table = Table(
+            title=f"📋 {title} Results",
+            box=box.ROUNDED,
+            border_style=color,
+            show_header=True,
+            header_style=f"bold {color}"
+        )
+        
+        table.add_column("#", style="dim", width=6)
+        table.add_column("Result", style=color)
+        
+        # Display results with pagination
+        page_size = 20
+        total_pages = (len(results) + page_size - 1) // page_size
+        current_page = 0
+        
+        while True:
+            # Clear and show current page
+            start_idx = current_page * page_size
+            end_idx = min(start_idx + page_size, len(results))
+            
+            # Create table for current page
+            page_table = Table(
+                title=f"📋 {title} Results (Page {current_page + 1}/{total_pages})",
+                box=box.ROUNDED,
+                border_style=color,
+                show_header=True,
+                header_style=f"bold {color}"
+            )
+            
+            page_table.add_column("#", style="dim", width=6)
+            page_table.add_column("Result", style=color)
+            
+            for i, result in enumerate(results[start_idx:end_idx], start=start_idx + 1):
+                # Clean up the result line
+                clean_result = result.replace("[DIR]", "").replace("[FILES]", "").replace("[VHOST]", "").replace("[DNS]", "").strip()
+                page_table.add_row(str(i), clean_result)
+            
+            console.print(page_table)
+            
+            # Navigation
+            if total_pages > 1:
+                console.print(f"\n[dim]Showing {start_idx + 1}-{end_idx} of {len(results)} results[/]")
+                
+                choices = []
+                if current_page < total_pages - 1:
+                    choices.append("➡️  Next Page")
+                if current_page > 0:
+                    choices.append("⬅️  Previous Page")
+                choices.append("🔙 Back")
+                
+                nav = questionary.select(
+                    "Navigation:",
+                    choices=choices,
+                    style=custom_style
+                ).ask()
+                
+                if "Next" in nav:
+                    current_page += 1
+                    console.clear()
+                elif "Previous" in nav:
+                    current_page -= 1
+                    console.clear()
+                else:
+                    break
+            else:
+                break
     
     def run(self):
         """Main TUI loop"""
@@ -355,24 +502,41 @@ class PathProwlerTUI:
             # Run scan
             self.run_scan()
             
-            # Ask to run another scan
-            console.print()
-            if questionary.confirm(
-                "Run another scan?",
-                default=False,
-                style=custom_style
-            ).ask():
-                self.stats = {
-                    'status': 'Idle',
-                    'directories': 0,
-                    'files': 0,
-                    'vhosts': 0,
-                    'subdomains': 0,
-                    'start_time': None
-                }
-                self.run()
-            else:
-                console.print("\n[bold cyan]🐾 Happy Prowling! 🎯[/]\n")
+            # Post-scan menu
+            while True:
+                console.print()
+                action = questionary.select(
+                    "What would you like to do next?",
+                    choices=[
+                        "📊 View Results",
+                        "🔄 Run Another Scan",
+                        "🚪 Exit"
+                    ],
+                    style=custom_style
+                ).ask()
+                
+                if "View Results" in action:
+                    self.view_results()
+                elif "Run Another" in action:
+                    self.stats = {
+                        'status': 'Idle',
+                        'directories': 0,
+                        'files': 0,
+                        'vhosts': 0,
+                        'subdomains': 0,
+                        'start_time': None
+                    }
+                    self.results = {
+                        'directories': [],
+                        'files': [],
+                        'vhosts': [],
+                        'subdomains': []
+                    }
+                    self.run()
+                    break
+                else:
+                    console.print("\n[bold cyan]🐾 Happy Prowling! 🎯[/]\n")
+                    break
         
         except KeyboardInterrupt:
             console.print("\n\n[yellow]Goodbye! 👋[/]\n")
