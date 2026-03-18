@@ -16,8 +16,18 @@ type screen int
 
 const (
 	configScreen screen = iota
+	confirmScreen
 	scanningScreen
 	resultsScreen
+)
+
+type scanMode string
+
+const (
+	modeDirs      scanMode = "dir"
+	modeVHost     scanMode = "vhost"
+	modeDNS       scanMode = "dns"
+	modeAll       scanMode = "all"
 )
 
 type scanResult struct {
@@ -35,6 +45,8 @@ type model struct {
 
 	// Config inputs
 	targetInput     textinput.Model
+	modeInput       textinput.Model
+	domainInput     textinput.Model
 	threadsInput    textinput.Model
 	extensionsInput textinput.Model
 	wordlistInput   textinput.Model
@@ -42,13 +54,18 @@ type model struct {
 	inputs          []textinput.Model
 
 	// Scan state
-	scanning     bool
-	spinner      spinner.Model
-	scanCmd      *exec.Cmd
-	results      []scanResult
-	directories  int
-	files        int
-	totalResults int
+	scanning      bool
+	spinner       spinner.Model
+	scanCmd       *exec.Cmd
+	results       []scanResult
+	directories   int
+	files         int
+	vhosts        int
+	subdomains    int
+	totalResults  int
+	wordlistSize  int
+	wordsScanned  int
+	selectedMode  scanMode
 
 	// Messages
 	statusMsg string
@@ -67,22 +84,34 @@ func initialModel() model {
 	ti1.TextStyle = focusedStyle
 
 	ti2 := textinput.New()
-	ti2.Placeholder = "50 (default)"
-	ti2.CharLimit = 4
+	ti2.Placeholder = "dir (dir/vhost/dns/all)"
+	ti2.CharLimit = 10
 	ti2.Width = 60
-	ti2.Prompt = "⚡ Threads: "
+	ti2.Prompt = "🔍 Scan Mode: "
 
 	ti3 := textinput.New()
-	ti3.Placeholder = "php,html,txt (optional)"
+	ti3.Placeholder = "example.com (for vhost/dns)"
 	ti3.CharLimit = 100
 	ti3.Width = 60
-	ti3.Prompt = "📄 Extensions: "
+	ti3.Prompt = "🌐 Domain: "
 
 	ti4 := textinput.New()
-	ti4.Placeholder = "/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt"
-	ti4.CharLimit = 300
+	ti4.Placeholder = "50 (default)"
+	ti4.CharLimit = 4
 	ti4.Width = 60
-	ti4.Prompt = "📚 Wordlist: "
+	ti4.Prompt = "⚡ Threads: "
+
+	ti5 := textinput.New()
+	ti5.Placeholder = "php,html,txt (optional)"
+	ti5.CharLimit = 100
+	ti5.Width = 60
+	ti5.Prompt = "📄 Extensions: "
+
+	ti6 := textinput.New()
+	ti6.Placeholder = "/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt"
+	ti6.CharLimit = 300
+	ti6.Width = 60
+	ti6.Prompt = "📚 Wordlist: "
 
 	// Create spinner
 	s := spinner.New()
@@ -92,13 +121,16 @@ func initialModel() model {
 	return model{
 		currentScreen:   configScreen,
 		targetInput:     ti1,
-		threadsInput:    ti2,
-		extensionsInput: ti3,
-		wordlistInput:   ti4,
-		inputs:          []textinput.Model{ti1, ti2, ti3, ti4},
+		modeInput:       ti2,
+		domainInput:     ti3,
+		threadsInput:    ti4,
+		extensionsInput: ti5,
+		wordlistInput:   ti6,
+		inputs:          []textinput.Model{ti1, ti2, ti3, ti4, ti5, ti6},
 		focusIndex:      0,
 		spinner:         s,
 		results:         []scanResult{},
+		selectedMode:    modeDirs,
 	}
 }
 
@@ -134,13 +166,32 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Clear any previous error
 				m.errorMsg = ""
 				
-				// Validate and start scan
+				// Validate inputs
 				target := m.targetInput.Value()
 				if target == "" {
 					m.errorMsg = "Target URL is required!"
 					return m, nil
 				}
 				
+				// Validate mode
+				mode := m.modeInput.Value()
+				if mode == "" {
+					mode = "dir"
+				}
+				m.selectedMode = scanMode(mode)
+				
+				// Check domain for vhost/dns modes
+				if (mode == "vhost" || mode == "dns" || mode == "all") && m.domainInput.Value() == "" {
+					m.errorMsg = "Domain is required for vhost/dns/all modes!"
+					return m, nil
+				}
+				
+				// Go to confirmation screen
+				m.currentScreen = confirmScreen
+				return m, nil
+			}
+			
+			if m.currentScreen == confirmScreen {
 				// Start the scan
 				m.scanning = true
 				m.currentScreen = scanningScreen
@@ -180,7 +231,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "v":
-			if m.currentScreen == scanningScreen && !m.scanning {
+			if m.currentScreen == scanningScreen {
 				m.currentScreen = resultsScreen
 				return m, nil
 			}
@@ -224,9 +275,11 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 
 	// Sync back to individual fields
 	m.targetInput = m.inputs[0]
-	m.threadsInput = m.inputs[1]
-	m.extensionsInput = m.inputs[2]
-	m.wordlistInput = m.inputs[3]
+	m.modeInput = m.inputs[1]
+	m.domainInput = m.inputs[2]
+	m.threadsInput = m.inputs[3]
+	m.extensionsInput = m.inputs[4]
+	m.wordlistInput = m.inputs[5]
 
 	return tea.Batch(cmds...)
 }
@@ -235,6 +288,8 @@ func (m model) View() string {
 	switch m.currentScreen {
 	case configScreen:
 		return m.configView()
+	case confirmScreen:
+		return m.confirmView()
 	case scanningScreen:
 		return m.scanningView()
 	case resultsScreen:
@@ -251,28 +306,55 @@ type errMsg string
 
 func (m *model) startScan() tea.Cmd {
 	return func() tea.Msg {
-		// Build feroxbuster command
+		// Get config values
 		target := m.targetInput.Value()
+		mode := string(m.selectedMode)
+		domain := m.domainInput.Value()
 		threads := m.threadsInput.Value()
 		if threads == "" {
 			threads = "50"
 		}
 		wordlist := m.wordlistInput.Value()
 		if wordlist == "" {
-			wordlist = "/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt"
+			wordlist = "/usr/share/seclists/Discovery/Web-Content/raft-large-directories.txt"
 		}
 
-		args := []string{
-			"-u", target,
-			"-t", threads,
-			"-w", wordlist,
-			"--silent",
-			"--no-state",
-		}
+		// Count wordlist size for progress
+		m.wordlistSize = countLines(wordlist)
 
-		// Add extensions if provided
-		if ext := m.extensionsInput.Value(); ext != "" {
-			args = append(args, "-x", ext)
+		var args []string
+		
+		// Build command based on mode
+		switch m.selectedMode {
+		case modeVHost:
+			args = []string{
+				"vhost",
+				"-u", target,
+				"-w", wordlist,
+				"-t", threads,
+				"--domain", domain,
+			}
+		case modeDNS:
+			args = []string{
+				"dns",
+				"-d", domain,
+				"-w", wordlist,
+				"-t", threads,
+			}
+		default: // dir or all
+			args = []string{
+				"dir",
+				"-u", target,
+				"-w", wordlist,
+				"-t", threads,
+				"--silent",
+				"--no-state",
+			}
+			
+			// Add extensions if provided
+			if ext := m.extensionsInput.Value(); ext != "" {
+				args = append(args, "-x", ext)
+			}
 		}
 
 		m.scanCmd = exec.Command("feroxbuster", args...)
@@ -293,18 +375,25 @@ func (m *model) startScan() tea.Cmd {
 		go func() {
 			for scanner.Scan() {
 				line := scanner.Text()
-				// Send line to be processed
 				if line != "" {
-					// Process in goroutine to avoid blocking
-					go func(l string) {
-						// This would be sent via a channel in real implementation
-					}(line)
+					m.wordsScanned++
+					m.processLine(line)
 				}
 			}
 		}()
 
 		return spinner.Tick
 	}
+}
+
+func countLines(filepath string) int {
+	file, err := exec.Command("wc", "-l", filepath).Output()
+	if err != nil {
+		return 0
+	}
+	var count int
+	fmt.Sscanf(string(file), "%d", &count)
+	return count
 }
 
 func (m *model) processLine(line string) {
@@ -320,13 +409,23 @@ func (m *model) processLine(line string) {
 	fmt.Sscanf(parts[1], "%d", &result.size)
 	result.path = parts[2]
 
-	// Determine type based on URL
-	if strings.HasSuffix(result.path, "/") {
-		result.resultType = "dir"
-		m.directories++
-	} else {
-		result.resultType = "file"
-		m.files++
+	// Determine type based on mode and URL
+	switch m.selectedMode {
+	case modeVHost:
+		result.resultType = "vhost"
+		m.vhosts++
+	case modeDNS:
+		result.resultType = "subdomain"
+		m.subdomains++
+	default:
+		// Determine type based on URL
+		if strings.HasSuffix(result.path, "/") {
+			result.resultType = "dir"
+			m.directories++
+		} else {
+			result.resultType = "file"
+			m.files++
+		}
 	}
 
 	m.results = append(m.results, result)

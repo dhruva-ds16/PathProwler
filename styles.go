@@ -52,6 +52,12 @@ var (
 	fileStyle = lipgloss.NewStyle().
 		Foreground(fileColor)
 
+	vhostStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("magenta"))
+
+	subdomainStyle = lipgloss.NewStyle().
+		Foreground(lipgloss.Color("blue"))
+
 	statsStyle = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(primaryColor).

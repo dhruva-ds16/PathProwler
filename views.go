@@ -56,6 +56,17 @@ func (m model) scanningView() string {
 	b.WriteString(title)
 	b.WriteString("\n\n")
 
+	// Progress bar
+	if m.wordlistSize > 0 {
+		progress := float64(m.wordsScanned) / float64(m.wordlistSize) * 100
+		progressBar := renderProgressBar(int(progress))
+		b.WriteString(progressBar)
+		b.WriteString("\n")
+		b.WriteString(helpStyle.Render(fmt.Sprintf("Progress: %d/%d words (%.1f%%)", 
+			m.wordsScanned, m.wordlistSize, progress)))
+		b.WriteString("\n\n")
+	}
+
 	// Statistics panel
 	stats := m.renderStats()
 	b.WriteString(stats)
@@ -75,12 +86,19 @@ func (m model) scanningView() string {
 		var style lipgloss.Style
 		var icon string
 
-		if result.resultType == "dir" {
+		switch result.resultType {
+		case "dir":
 			style = dirStyle
 			icon = "📁"
-		} else {
+		case "file":
 			style = fileStyle
 			icon = "📄"
+		case "vhost":
+			style = vhostStyle
+			icon = "🌐"
+		case "subdomain":
+			style = subdomainStyle
+			icon = "🔍"
 		}
 
 		line := fmt.Sprintf("%s %s [%d] (%d bytes)",
@@ -95,6 +113,22 @@ func (m model) scanningView() string {
 	b.WriteString(help)
 
 	return docStyle.Render(b.String())
+}
+
+func renderProgressBar(percent int) string {
+	width := 50
+	filled := percent * width / 100
+	if filled > width {
+		filled = width
+	}
+	
+	bar := strings.Repeat("█", filled) + strings.Repeat("░", width-filled)
+	
+	style := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("cyan")).
+		Bold(true)
+	
+	return style.Render(fmt.Sprintf("[%s]", bar))
 }
 
 func (m model) resultsView() string {
@@ -153,9 +187,11 @@ func (m model) renderStats() string {
 ├─────────────────────────────┤
 │  📁 Directories: %-10d │
 │  📄 Files:       %-10d │
+│  🌐 VHosts:      %-10d │
+│  🔍 Subdomains:  %-10d │
 │  📊 Total:       %-10d │
 ╰─────────────────────────────╯
-`, m.directories, m.files, m.totalResults)
+`, m.directories, m.files, m.vhosts, m.subdomains, m.totalResults)
 
 	return statsStyle.Render(stats)
 }
