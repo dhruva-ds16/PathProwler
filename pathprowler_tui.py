@@ -173,7 +173,6 @@ class PathProwlerDashboard(App):
     CSS = """
     Screen {
         background: $surface;
-        layers: base overlay;
     }
     
     .section-title {
@@ -200,9 +199,6 @@ class PathProwlerDashboard(App):
         border: heavy $primary;
         padding: 1 2;
         background: $panel;
-        border-title-align: center;
-        border-title-color: $accent;
-        border-title-style: bold;
     }
     
     ScanConfig {
@@ -211,9 +207,6 @@ class PathProwlerDashboard(App):
         padding: 1 2;
         overflow-y: auto;
         background: $panel;
-        border-title-align: center;
-        border-title-color: $primary;
-        border-title-style: bold;
     }
     
     .config-row {
@@ -252,8 +245,6 @@ class PathProwlerDashboard(App):
         border: heavy $warning;
         height: 100%;
         background: $panel;
-        scrollbar-background: $panel;
-        scrollbar-color: $warning;
     }
     
     DataTable {
@@ -275,14 +266,6 @@ class PathProwlerDashboard(App):
     ProgressBar {
         margin: 1 0;
         height: 3;
-    }
-    
-    ProgressBar > .bar--bar {
-        color: $success;
-    }
-    
-    ProgressBar > .bar--indeterminate {
-        color: $warning;
     }
     
     #main-container {
@@ -410,19 +393,19 @@ class PathProwlerDashboard(App):
                         yield ResultsTable(id="results-table")
                     
                     with TabPane("📝 Console Log", id="log-tab"):
-                        yield Log(id="console-log", highlight=True, markup=True)
+                        yield Log(id="console-log")
                     
                     with TabPane("📊 Directory Scan", id="dir-tab"):
-                        yield Log(id="dir-log", highlight=True)
+                        yield Log(id="dir-log")
                     
                     with TabPane("📄 File Scan", id="file-tab"):
-                        yield Log(id="file-log", highlight=True)
+                        yield Log(id="file-log")
                     
                     with TabPane("🌐 VHost Scan", id="vhost-tab"):
-                        yield Log(id="vhost-log", highlight=True)
+                        yield Log(id="vhost-log")
                     
                     with TabPane("🔍 DNS Scan", id="dns-tab"):
-                        yield Log(id="dns-log", highlight=True)
+                        yield Log(id="dns-log")
         
         yield Footer()
     
