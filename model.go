@@ -3,6 +3,8 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -209,7 +211,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				// Start the scan
 				m.scanning = true
 				m.currentScreen = scanningScreen
-				return m, tea.Batch(m.spinner.Tick, m.startScan())
+				return m, tea.Batch(m.spinner.Tick, tickCmd(), m.startScan())
 			}
 
 		case "tab", "shift+tab", "up", "down":
@@ -254,20 +256,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case spinner.TickMsg:
 		var cmd tea.Cmd
 		m.spinner, cmd = m.spinner.Update(msg)
-		return m, cmd
+		if m.scanning {
+			return m, cmd
+		}
+		return m, nil
 
-	case scanLineMsg:
-		m.processLine(string(msg))
-		return m, readLine(m.scanCmd)
-
-	case scanCompleteMsg:
-		m.scanning = false
-		m.statusMsg = "Scan completed!"
-		m.currentScreen = resultsScreen
+	case scanProgressMsg:
+		// Periodic refresh during scan
+		if m.scanning {
+			return m, tickCmd()
+		}
 		return m, nil
 
 	case errMsg:
-		m.errorMsg = string(msg)
+		m.errorMsg = msg.msg
 		m.scanning = false
 		return m, nil
 	}
@@ -315,9 +317,14 @@ func (m model) View() string {
 }
 
 // Message types
-type scanLineMsg string
+type scanLineMsg struct {
+	line string
+}
 type scanCompleteMsg struct{}
-type errMsg string
+type scanProgressMsg struct{}
+type errMsg struct {
+	msg string
+}
 
 func (m *model) startScan() tea.Cmd {
 	return func() tea.Msg {
@@ -375,38 +382,62 @@ func (m *model) startScan() tea.Cmd {
 		
 		stdout, err := m.scanCmd.StdoutPipe()
 		if err != nil {
-			return errMsg(fmt.Sprintf("Failed to create pipe: %v", err))
+			return errMsg{msg: fmt.Sprintf("Failed to create pipe: %v", err)}
 		}
 
 		if err := m.scanCmd.Start(); err != nil {
-			return errMsg(fmt.Sprintf("Failed to start scan: %v", err))
+			return errMsg{msg: fmt.Sprintf("Failed to start scan: %v", err)}
 		}
 
 		m.statusMsg = "Scanning..."
 
-		// Read output line by line
-		scanner := bufio.NewScanner(stdout)
-		go func() {
-			for scanner.Scan() {
-				line := scanner.Text()
-				if line != "" {
-					m.wordsScanned++
-					m.processLine(line)
-				}
-			}
-		}()
+		// Start reading output in background
+		go m.readScanOutput(stdout)
 
 		return spinner.Tick
 	}
 }
 
+func (m *model) readScanOutput(stdout io.ReadCloser) {
+	scanner := bufio.NewScanner(stdout)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line != "" {
+			m.wordsScanned++
+			m.processLine(line)
+		}
+	}
+	
+	// Wait for command to finish
+	if m.scanCmd != nil {
+		m.scanCmd.Wait()
+	}
+	
+	m.scanning = false
+	m.statusMsg = "Scan complete!"
+}
+
 func countLines(filepath string) int {
+	// Try wc command (Unix/Linux)
 	file, err := exec.Command("wc", "-l", filepath).Output()
+	if err == nil {
+		var count int
+		fmt.Sscanf(string(file), "%d", &count)
+		return count
+	}
+	
+	// Fallback: count manually
+	f, err := os.Open(filepath)
 	if err != nil {
 		return 0
 	}
-	var count int
-	fmt.Sscanf(string(file), "%d", &count)
+	defer f.Close()
+	
+	count := 0
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		count++
+	}
 	return count
 }
 
@@ -463,13 +494,11 @@ func (m *model) processLine(line string) {
 	m.totalResults++
 }
 
-func readLine(cmd *exec.Cmd) tea.Cmd {
-	return func() tea.Msg {
-		// This is a simplified version
-		// In production, use proper channel-based communication
-		time.Sleep(100 * time.Millisecond)
-		return scanLineMsg("")
-	}
+// Periodic UI refresh during scanning
+func tickCmd() tea.Cmd {
+	return tea.Tick(time.Millisecond*100, func(t time.Time) tea.Msg {
+		return scanProgressMsg{}
+	})
 }
 
 func checkFeroxbuster() bool {
