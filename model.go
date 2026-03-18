@@ -50,6 +50,7 @@ type model struct {
 	threadsInput    textinput.Model
 	extensionsInput textinput.Model
 	wordlistInput   textinput.Model
+	appendInput     textinput.Model
 	focusIndex      int
 	inputs          []textinput.Model
 
@@ -66,6 +67,7 @@ type model struct {
 	wordlistSize  int
 	wordsScanned  int
 	selectedMode  scanMode
+	appendDomain  bool
 
 	// Messages
 	statusMsg string
@@ -113,6 +115,12 @@ func initialModel() model {
 	ti6.Width = 60
 	ti6.Prompt = "📚 Wordlist: "
 
+	ti7 := textinput.New()
+	ti7.Placeholder = "no (yes/no)"
+	ti7.CharLimit = 3
+	ti7.Width = 60
+	ti7.Prompt = "🔗 Append Domain: "
+
 	// Create spinner
 	s := spinner.New()
 	s.Spinner = spinner.Dot
@@ -126,11 +134,13 @@ func initialModel() model {
 		threadsInput:    ti4,
 		extensionsInput: ti5,
 		wordlistInput:   ti6,
-		inputs:          []textinput.Model{ti1, ti2, ti3, ti4, ti5, ti6},
+		appendInput:     ti7,
+		inputs:          []textinput.Model{ti1, ti2, ti3, ti4, ti5, ti6, ti7},
 		focusIndex:      0,
 		spinner:         s,
 		results:         []scanResult{},
 		selectedMode:    modeDirs,
+		appendDomain:    false,
 	}
 }
 
@@ -180,9 +190,13 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 				m.selectedMode = scanMode(mode)
 				
-				// Check domain for vhost/dns modes
-				if (mode == "vhost" || mode == "dns" || mode == "all") && m.domainInput.Value() == "" {
-					m.errorMsg = "Domain is required for vhost/dns/all modes!"
+				// Check append domain setting
+				appendVal := strings.ToLower(m.appendInput.Value())
+				m.appendDomain = (appendVal == "yes" || appendVal == "y")
+				
+				// Check domain for vhost/dns modes or append domain
+				if (mode == "vhost" || mode == "dns" || mode == "all" || m.appendDomain) && m.domainInput.Value() == "" {
+					m.errorMsg = "Domain is required for vhost/dns/all modes or when appending domain!"
 					return m, nil
 				}
 				
@@ -280,6 +294,7 @@ func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	m.threadsInput = m.inputs[3]
 	m.extensionsInput = m.inputs[4]
 	m.wordlistInput = m.inputs[5]
+	m.appendInput = m.inputs[6]
 
 	return tea.Batch(cmds...)
 }
@@ -407,6 +422,23 @@ func (m *model) processLine(line string) {
 	fmt.Sscanf(parts[0], "%d", &result.statusCode)
 	fmt.Sscanf(parts[1], "%d", &result.size)
 	result.path = parts[2]
+
+	// Append domain if enabled
+	if m.appendDomain && m.selectedMode == modeDirs {
+		domain := m.domainInput.Value()
+		if domain != "" {
+			// Extract just the path from the URL
+			if strings.Contains(result.path, "://") {
+				urlParts := strings.SplitN(result.path, "://", 2)
+				if len(urlParts) == 2 {
+					pathParts := strings.SplitN(urlParts[1], "/", 2)
+					if len(pathParts) == 2 {
+						result.path = urlParts[0] + "://" + domain + "/" + pathParts[1]
+					}
+				}
+			}
+		}
+	}
 
 	// Determine type based on mode and URL
 	switch m.selectedMode {

@@ -16,22 +16,29 @@ func (m model) confirmView() string {
 	b.WriteString("\n\n")
 
 	// Configuration table
+	appendStatus := "No"
+	if m.appendDomain {
+		appendStatus = "Yes"
+	}
+	
 	config := fmt.Sprintf(`
 ╭─────────────────────────────────────────────────────────────╮
-│  🎯 Target:      %-42s │
-│  🔍 Mode:        %-42s │
-│  🌐 Domain:      %-42s │
-│  ⚡ Threads:     %-42s │
-│  📄 Extensions:  %-42s │
-│  📚 Wordlist:    %-42s │
+│  🎯 Target:         %-39s │
+│  🔍 Mode:           %-39s │
+│  🌐 Domain:         %-39s │
+│  🔗 Append Domain:  %-39s │
+│  ⚡ Threads:        %-39s │
+│  📄 Extensions:     %-39s │
+│  📚 Wordlist:       %-39s │
 ╰─────────────────────────────────────────────────────────────╯
 `,
-		truncate(getValue(m.targetInput.Value()), 42),
-		truncate(getValue(m.modeInput.Value(), "dir"), 42),
-		truncate(getValue(m.domainInput.Value(), "N/A"), 42),
-		truncate(getValue(m.threadsInput.Value(), "50"), 42),
-		truncate(getValue(m.extensionsInput.Value(), "None"), 42),
-		truncate(getValue(m.wordlistInput.Value(), "raft-large-directories.txt"), 42),
+		truncate(getValue(m.targetInput.Value()), 39),
+		truncate(getValue(m.modeInput.Value(), "dir"), 39),
+		truncate(getValue(m.domainInput.Value(), "N/A"), 39),
+		truncate(appendStatus, 39),
+		truncate(getValue(m.threadsInput.Value(), "50"), 39),
+		truncate(getValue(m.extensionsInput.Value(), "None"), 39),
+		truncate(getValue(m.wordlistInput.Value(), "raft-large-directories.txt"), 39),
 	)
 
 	b.WriteString(statsStyle.Render(config))
