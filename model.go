@@ -308,7 +308,6 @@ func (m *model) startScan() tea.Cmd {
 	return func() tea.Msg {
 		// Get config values
 		target := m.targetInput.Value()
-		mode := string(m.selectedMode)
 		domain := m.domainInput.Value()
 		threads := m.threadsInput.Value()
 		if threads == "" {
