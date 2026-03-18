@@ -211,21 +211,22 @@ class PathProwlerTUI:
         ).ask()
     
     def create_stats_panel(self):
-        """Create statistics panel"""
-        elapsed = "0s"
-        if self.stats['start_time']:
-            elapsed_sec = int(time.time() - self.stats['start_time'])
-            elapsed = f"{elapsed_sec}s"
-        
-        # Status indicator
+        """Create statistics panel with spinner"""
+        # Status indicator with spinner
         status_color = "green" if self.stats['status'] == "Running" else "yellow"
+        
+        # Spinner frames
+        spinner_frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        spinner_idx = int(time.time() * 10) % len(spinner_frames)
+        spinner = spinner_frames[spinner_idx] if self.stats['status'] == "Running" else "●"
+        
         status_text = Text()
-        status_text.append("● ", style=f"bold {status_color}")
+        status_text.append(f"{spinner} ", style=f"bold {status_color}")
         status_text.append(self.stats['status'], style=f"bold {status_color}")
         
         # Stats grid
         stats_text = Text()
-        stats_text.append(f"⏱️  {elapsed}\n\n", style="dim")
+        stats_text.append("\n")
         stats_text.append(f"📁 Directories: ", style="bold green")
         stats_text.append(f"{self.stats['directories']}\n", style="cyan")
         stats_text.append(f"📄 Files: ", style="bold yellow")
@@ -247,7 +248,7 @@ class PathProwlerTUI:
         # Combine status and stats
         content = Text()
         content.append_text(status_text)
-        content.append("\n\n")
+        content.append("\n")
         content.append_text(stats_text)
         
         return Panel(
@@ -295,11 +296,12 @@ class PathProwlerTUI:
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
-                bufsize=1
+                bufsize=1,
+                universal_newlines=True
             )
             
-            # Create live display
-            with Live(self.create_stats_panel(), refresh_per_second=2, console=console) as live:
+            # Create live display with faster refresh
+            with Live(self.create_stats_panel(), refresh_per_second=10, console=console) as live:
                 console.print(Panel(
                     "[bold cyan]Scan Output[/]",
                     box=box.ROUNDED,
@@ -385,7 +387,10 @@ class PathProwlerTUI:
                 style=custom_style
             ).ask()
             
-            if not choice or "Back" in choice:
+            if not choice:
+                break
+            
+            if "Back" in choice:
                 break
             
             console.print()
@@ -468,6 +473,9 @@ class PathProwlerTUI:
                     style=custom_style
                 ).ask()
                 
+                if not nav:
+                    break
+                
                 if "Next" in nav:
                     current_page += 1
                     console.clear()
@@ -514,6 +522,10 @@ class PathProwlerTUI:
                     ],
                     style=custom_style
                 ).ask()
+                
+                if not action:
+                    console.print("\n[bold cyan]🐾 Happy Prowling! 🎯[/]\n")
+                    break
                 
                 if "View Results" in action:
                     self.view_results()
