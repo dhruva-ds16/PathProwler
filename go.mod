@@ -1,6 +1,6 @@
 module github.com/dhruva-ds16/PathProwler
 
-go 1.21
+go 1.19
 
 require (
 	github.com/charmbracelet/bubbles v0.18.0
