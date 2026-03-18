@@ -26,6 +26,20 @@ from textual import work
 from textual.worker import Worker, WorkerState
 
 
+class WelcomeBanner(Static):
+    """Welcome banner widget"""
+    
+    def compose(self) -> ComposeResult:
+        banner = """
+[bold cyan]╔═══════════════════════════════════════╗[/]
+[bold cyan]║[/]  [bold magenta]🐾 PathProwler[/] [dim]v2.0[/]              [bold cyan]║[/]
+[bold cyan]║[/]  [dim]Prowl through paths & discover[/]  [bold cyan]║[/]
+[bold cyan]║[/]  [dim]hidden treasures with precision[/] [bold cyan]║[/]
+[bold cyan]╚═══════════════════════════════════════╝[/]
+        """
+        yield Static(banner, id="welcome-banner")
+
+
 class ScanStats(Static):
     """Widget to display scan statistics"""
     
@@ -37,7 +51,7 @@ class ScanStats(Static):
     elapsed_time = reactive("0s")
     
     def compose(self) -> ComposeResult:
-        yield Static("📊 Scan Statistics", classes="stats-title")
+        yield Static("📊 Live Statistics", classes="stats-title")
         yield Static(id="stats-content")
     
     def watch_directories_found(self, value: int) -> None:
@@ -60,15 +74,32 @@ class ScanStats(Static):
     
     def update_stats(self) -> None:
         stats_widget = self.query_one("#stats-content", Static)
+        total = self.directories_found + self.files_found + self.vhosts_found + self.subdomains_found
+        
+        # Status indicator with color
+        status_color = "green" if self.scan_status == "Running" else "yellow" if self.scan_status == "Idle" else "cyan"
+        
         stats_widget.update(f"""
-[bold cyan]Status:[/] {self.scan_status}
-[bold cyan]Elapsed:[/] {self.elapsed_time}
+╭─────────────────────────╮
+│ [bold {status_color}]● {self.scan_status:^18}[/] │
+│ [dim]⏱️  {self.elapsed_time:^19}[/] │
+╰─────────────────────────╯
 
-[bold green]📁 Directories:[/] {self.directories_found}
-[bold yellow]📄 Files:[/] {self.files_found}
-[bold magenta]🌐 VHosts:[/] {self.vhosts_found}
-[bold cyan]🔍 Subdomains:[/] {self.subdomains_found}
-[bold white]Total:[/] {self.directories_found + self.files_found + self.vhosts_found + self.subdomains_found}
+[bold green]📁 Directories[/]
+   [cyan]▸[/] {self.directories_found:>4} [dim]found[/]
+
+[bold yellow]📄 Files[/]
+   [cyan]▸[/] {self.files_found:>4} [dim]found[/]
+
+[bold magenta]🌐 VHosts[/]
+   [cyan]▸[/] {self.vhosts_found:>4} [dim]found[/]
+
+[bold blue]🔍 Subdomains[/]
+   [cyan]▸[/] {self.subdomains_found:>4} [dim]found[/]
+
+╭─────────────────────────╮
+│ [bold white]Total Results: {total:>4}[/]  │
+╰─────────────────────────╯
         """)
 
 
@@ -123,8 +154,8 @@ class ScanConfig(Static):
         
         with Horizontal(classes="button-row"):
             yield Button("🚀 Start Scan", variant="success", id="start-scan")
-            yield Button("⏹️ Stop Scan", variant="error", id="stop-scan")
-            yield Button("💾 Export Results", variant="primary", id="export-results")
+            yield Button("⏹️  Stop", variant="error", id="stop-scan")
+            yield Button("💾 Export", variant="primary", id="export-results")
 
 
 class ResultsTable(DataTable):
@@ -142,6 +173,7 @@ class PathProwlerDashboard(App):
     CSS = """
     Screen {
         background: $surface;
+        layers: base overlay;
     }
     
     .section-title {
@@ -150,28 +182,38 @@ class PathProwlerDashboard(App):
         padding: 1;
         text-align: center;
         text-style: bold;
+        border: heavy $primary-darken-2;
     }
     
     .stats-title {
-        background: $accent;
+        background: linear-gradient(90deg, $accent 0%, $accent-darken-1 100%);
         color: $text;
         padding: 1;
         text-align: center;
         text-style: bold;
+        border: heavy $accent-darken-2;
     }
     
     ScanStats {
-        width: 30;
+        width: 32;
         height: 100%;
-        border: solid $primary;
-        padding: 1;
+        border: heavy $primary;
+        padding: 1 2;
+        background: $panel;
+        border-title-align: center;
+        border-title-color: $accent;
+        border-title-style: bold;
     }
     
     ScanConfig {
         height: 100%;
-        border: solid $accent;
-        padding: 1;
+        border: heavy $accent;
+        padding: 1 2;
         overflow-y: auto;
+        background: $panel;
+        border-title-align: center;
+        border-title-color: $primary;
+        border-title-style: bold;
     }
     
     .config-row {
@@ -187,24 +229,60 @@ class PathProwlerDashboard(App):
     
     Input {
         margin-bottom: 1;
+        border: solid $primary-lighten-1;
+        background: $boost;
+    }
+    
+    Input:focus {
+        border: heavy $accent;
     }
     
     Button {
         margin: 0 1;
+        min-width: 18;
+        border: heavy;
+    }
+    
+    Button:hover {
+        background: $primary;
+        border: heavy $accent;
     }
     
     Log {
-        border: solid $warning;
+        border: heavy $warning;
         height: 100%;
+        background: $panel;
+        scrollbar-background: $panel;
+        scrollbar-color: $warning;
     }
     
     DataTable {
         height: 100%;
-        border: solid $success;
+        border: heavy $success;
+        background: $panel;
+    }
+    
+    DataTable > .datatable--header {
+        background: $success;
+        color: $text;
+        text-style: bold;
+    }
+    
+    DataTable > .datatable--cursor {
+        background: $accent 50%;
     }
     
     ProgressBar {
         margin: 1 0;
+        height: 3;
+    }
+    
+    ProgressBar > .bar--bar {
+        color: $success;
+    }
+    
+    ProgressBar > .bar--indeterminate {
+        color: $warning;
     }
     
     #main-container {
@@ -219,10 +297,79 @@ class PathProwlerDashboard(App):
     #right-panel {
         width: 65%;
         height: 100%;
+        border-left: heavy $primary;
     }
     
     TabPane {
+        padding: 1 2;
+        background: $panel;
+    }
+    
+    TabbedContent {
+        border: heavy $primary;
+    }
+    
+    Tabs {
+        background: $primary-darken-2;
+    }
+    
+    Tab {
+        background: $panel;
+        color: $text-muted;
+    }
+    
+    Tab:hover {
+        background: $primary-lighten-1;
+        color: $text;
+    }
+    
+    Tab.-active {
+        background: $primary;
+        color: $text;
+        text-style: bold;
+    }
+    
+    Label {
+        color: $text-muted;
+        text-style: bold;
+        margin-bottom: 0;
+    }
+    
+    Checkbox {
+        background: $boost;
+        border: solid $primary;
+        padding: 0 1;
+    }
+    
+    Checkbox:focus {
+        border: heavy $accent;
+    }
+    
+    Select {
+        border: solid $primary-lighten-1;
+        background: $boost;
+    }
+    
+    Select:focus {
+        border: heavy $accent;
+    }
+    
+    #stats-content {
+        padding: 1 0;
+        color: $text;
+    }
+    
+    #welcome-banner {
+        text-align: center;
         padding: 1;
+        background: $panel;
+        border: heavy $accent;
+        margin-bottom: 1;
+    }
+    
+    WelcomeBanner {
+        height: auto;
+        dock: top;
     }
     """
     
@@ -250,6 +397,7 @@ class PathProwlerDashboard(App):
     
     def compose(self) -> ComposeResult:
         yield Header()
+        yield WelcomeBanner()
         
         with Horizontal(id="main-container"):
             with Vertical(id="left-panel"):
@@ -280,23 +428,26 @@ class PathProwlerDashboard(App):
     
     def on_mount(self) -> None:
         """Initialize the dashboard"""
-        self.log_message("Gobuster Pro Dashboard initialized", "success")
-        self.log_message("Configure your scan and press 'Start Scan' or 's'", "info")
+        self.log_message("🐾 PathProwler Dashboard initialized successfully", "success")
+        self.log_message("💡 Configure your scan settings and press 'Start Scan' or 's'", "info")
+        self.log_message("📚 Use Tab to navigate between result views", "info")
     
     def log_message(self, message: str, level: str = "info") -> None:
-        """Log a message to the console"""
+        """Log a message to the console with enhanced formatting"""
         console_log = self.query_one("#console-log", Log)
         timestamp = datetime.now().strftime("%H:%M:%S")
         
-        colors = {
-            "info": "cyan",
-            "success": "green",
-            "warning": "yellow",
-            "error": "red"
+        # Enhanced color scheme and icons
+        formats = {
+            "info": ("cyan", "ℹ️"),
+            "success": ("green", "✓"),
+            "warning": ("yellow", "⚠️"),
+            "error": ("red", "✗"),
+            "scan": ("magenta", "🔍")
         }
-        color = colors.get(level, "white")
+        color, icon = formats.get(level, ("white", "•"))
         
-        console_log.write_line(f"[{color}][{timestamp}][/] {message}")
+        console_log.write_line(f"[dim]{timestamp}[/] [{color}]{icon}[/] {message}")
     
     def on_button_pressed(self, event: Button.Pressed) -> None:
         """Handle button presses"""

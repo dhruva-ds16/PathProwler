@@ -1,4 +1,4 @@
-# Gobuster Pro - Installation Guide
+# PathProwler - Installation Guide
 
 Complete installation instructions for Windows, Linux, and macOS.
 
@@ -153,10 +153,10 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 
 # 5. Run the TUI
-python gobuster_tui.py
+python pathprowler_tui.py
 
 # Or run the CLI
-python gobuster_scan.py -u http://target.com -m all
+python pathprowler.py -u http://target.com -m all
 ```
 
 #### Linux/macOS
@@ -174,10 +174,10 @@ pip install --upgrade pip
 pip install -r requirements.txt
 
 # 5. Run the TUI
-python gobuster_tui.py
+python pathprowler_tui.py
 
 # Or run the CLI
-python gobuster_scan.py -u http://target.com -m all
+python pathprowler.py -u http://target.com -m all
 ```
 
 ### Method 3: System-Wide Installation (Not Recommended)
@@ -187,7 +187,7 @@ python gobuster_scan.py -u http://target.com -m all
 pip install textual rich
 
 # Run directly
-python gobuster_tui.py
+python pathprowler_tui.py
 ```
 
 **Note:** System-wide installation is not recommended as it can cause dependency conflicts.
@@ -202,7 +202,7 @@ python gobuster_tui.py
 .\run.ps1
 
 # Or manually
-.\venv\Scripts\python.exe gobuster_tui.py
+.\venv\Scripts\python.exe pathprowler_tui.py
 ```
 
 #### Linux/macOS
@@ -211,7 +211,7 @@ python gobuster_tui.py
 ./run.sh
 
 # Or manually
-./venv/bin/python gobuster_tui.py
+./venv/bin/python pathprowler_tui.py
 ```
 
 ### CLI (Command Line Interface)
@@ -222,10 +222,10 @@ python gobuster_tui.py
 .\venv\Scripts\Activate.ps1
 
 # Run CLI
-python gobuster_scan.py -u http://target.com -m all -d target.com
+python pathprowler.py -u http://target.com -m all -d target.com
 
 # Or without activating
-.\venv\Scripts\python.exe gobuster_scan.py -u http://target.com -m all
+.\venv\Scripts\python.exe pathprowler.py -u http://target.com -m all
 ```
 
 #### Linux/macOS
@@ -234,10 +234,10 @@ python gobuster_scan.py -u http://target.com -m all -d target.com
 source venv/bin/activate
 
 # Run CLI
-python gobuster_scan.py -u http://target.com -m all -d target.com
+python pathprowler.py -u http://target.com -m all -d target.com
 
 # Or without activating
-./venv/bin/python gobuster_scan.py -u http://target.com -m all
+./venv/bin/python pathprowler.py -u http://target.com -m all
 ```
 
 ## Verification
@@ -265,7 +265,7 @@ ls venv/  # Should see Scripts/ (Windows) or bin/ (Linux/Mac)
 ./run.sh       # Linux/Mac
 
 # Test CLI (should show help)
-python gobuster_scan.py --help
+python pathprowler.py --help
 ```
 
 ## Troubleshooting
@@ -437,10 +437,10 @@ rm -rf ~/Automation
 ### Keep Results, Remove Tools
 ```bash
 # Move results to safe location
-mv gobuster_* ~/scan_results/
+mv pathprowler_* ~/scan_results/
 
 # Remove tool files
-rm gobuster_scan.py gobuster_tui.py requirements.txt *.ps1 *.sh *.md
+rm pathprowler.py pathprowler_tui.py requirements.txt *.ps1 *.sh *.md
 rm -rf venv
 ```
 
@@ -449,13 +449,13 @@ rm -rf venv
 ### Custom Wordlist Location
 ```bash
 # Edit gobuster_scan.py or use -w flag
-python gobuster_scan.py -u http://target.com -w /custom/path/to/wordlists
+python pathprowler.py -u http://target.com -w /custom/path/to/wordlists
 ```
 
 ### Proxy Configuration
 ```bash
 # Use with Burp Suite
-python gobuster_scan.py -u http://target.com -p http://127.0.0.1:8080
+python pathprowler.py -u http://target.com -p http://127.0.0.1:8080
 ```
 
 ### Custom Python Version
@@ -487,19 +487,19 @@ RUN pip install -r requirements.txt
 COPY . .
 
 # Run TUI
-CMD ["python", "gobuster_tui.py"]
+CMD ["python", "pathprowler_tui.py"]
 ```
 
 ### Build and Run
 ```bash
 # Build image
-docker build -t gobuster-pro .
+docker build -t pathprowler .
 
 # Run TUI
-docker run -it gobuster-pro
+docker run -it pathprowler
 
 # Run CLI
-docker run -it gobuster-pro python gobuster_scan.py -u http://target.com -m all
+docker run -it pathprowler python pathprowler.py -u http://target.com -m all
 ```
 
 ## Support

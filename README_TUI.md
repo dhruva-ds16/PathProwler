@@ -1,6 +1,6 @@
-# Gobuster Pro - Interactive TUI Dashboard
+# PathProwler - Interactive TUI Dashboard
 
-A beautiful, interactive terminal user interface for gobuster directory busting and vhost scanning.
+A beautiful, interactive terminal user interface for directory busting, subdomain enumeration, and vhost scanning.
 
 ## Features
 
@@ -71,7 +71,7 @@ pip install -r requirements.txt
 
 **Or manually:**
 ```bash
-python gobuster_tui.py
+python pathprowler_tui.py
 ```
 
 ### Keyboard Shortcuts
@@ -114,7 +114,7 @@ Fill in the form on the left panel:
 ### Main Dashboard
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│ Gobuster Pro - Interactive TUI Dashboard                           │
+│ PathProwler - Interactive TUI Dashboard                           │
 ├─────────────────────────────────────────────────────────────────────┤
 │ ┌─────────────────┐ ┌─────────────────────────────────────────────┐│
 │ │ 📊 Statistics   │ │ 📋 Results                                  ││
@@ -139,7 +139,7 @@ Fill in the form on the left panel:
 
 Results are saved to timestamped directories:
 ```
-gobuster_results_20260317_173045/
+pathprowler_results_20260317_173045/
 ├── directories.txt    # Raw gobuster directory output
 ├── files.txt         # Raw gobuster file output
 ├── vhosts.txt        # Raw gobuster vhost output
@@ -187,14 +187,14 @@ Change the wordlist directory to use your own wordlists. The tool expects:
 - `Discovery/DNS/subdomains-top1million-5000.txt`
 
 ### Integration with Burp Suite
-The CLI version (`gobuster_scan.py`) supports proxy settings:
+The CLI version (`pathprowler.py`) supports proxy settings:
 ```bash
-python gobuster_scan.py -u http://target.com -p http://127.0.0.1:8080
+python pathprowler.py -u http://target.com -p http://127.0.0.1:8080
 ```
 
 ## Comparison: CLI vs TUI
 
-| Feature | CLI (`gobuster_scan.py`) | TUI (`gobuster_tui.py`) |
+| Feature | CLI (`pathprowler.py`) | TUI (`pathprowler_tui.py`) |
 |---------|-------------------------|------------------------|
 | Interactive | ❌ | ✅ |
 | Real-time monitoring | ❌ | ✅ |

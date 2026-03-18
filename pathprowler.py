@@ -32,7 +32,7 @@ class GobusterScanner:
     def __init__(self, target, wordlist_dir="/usr/share/wordlists/seclists", threads=50, 
                  timeout=10, status_codes=None, output_format="txt", verbose=False,
                  recursive=False, recursive_depth=3, user_agent=None, cookies=None,
-                 proxy=None, delay=0):
+                 proxy=None, delay=0, display_only=False):
         self.target = target.rstrip('/')
         self.wordlist_dir = wordlist_dir
         self.threads = threads
@@ -46,10 +46,11 @@ class GobusterScanner:
         self.cookies = cookies
         self.proxy = proxy
         self.delay = delay
+        self.display_only = display_only
         
         # Extract domain/IP from target for directory name
         target_name = self._extract_target_name(target)
-        self.results_dir = f"pathprowler_{target_name}"
+        self.results_dir = f"pathprowler_{target_name}" if not display_only else None
         
         # Raft medium wordlists
         self.dir_wordlist = os.path.join(wordlist_dir, "Discovery/Web-Content/raft-medium-directories.txt")
@@ -64,16 +65,25 @@ class GobusterScanner:
             'subdomains': []
         }
         
-        # Create results directory (append counter if exists)
-        base_dir = self.results_dir
-        counter = 1
-        while os.path.exists(self.results_dir):
-            self.results_dir = f"{base_dir}_{counter}"
-            counter += 1
-        os.makedirs(self.results_dir, exist_ok=True)
-        
-        # Setup logging
-        self.setup_logging()
+        # Create results directory (append counter if exists) - skip if display_only
+        if not self.display_only:
+            base_dir = self.results_dir
+            counter = 1
+            while os.path.exists(self.results_dir):
+                self.results_dir = f"{base_dir}_{counter}"
+                counter += 1
+            os.makedirs(self.results_dir, exist_ok=True)
+            
+            # Setup logging
+            self.setup_logging()
+        else:
+            # Display-only mode: use console logging only
+            logging.basicConfig(
+                level=logging.DEBUG if self.verbose else logging.INFO,
+                format='%(asctime)s [%(levelname)s] %(message)s',
+                handlers=[logging.StreamHandler(sys.stdout)]
+            )
+            logging.info("PathProwler initialized in DISPLAY-ONLY mode (no files will be saved)")
     
     def _extract_target_name(self, target):
         """Extract domain or IP from target URL for directory naming"""
@@ -150,11 +160,14 @@ class GobusterScanner:
             "-u", self.target,
             "-w", wordlist,
             "-t", str(self.threads),
-            "-o", output_file,
             "--timeout", f"{self.timeout}s",
             "-k",  # Skip SSL verification
             "-s", self.status_codes,  # Status codes to match
         ]
+        
+        # Only add output file if not in display-only mode
+        if not self.display_only:
+            cmd.extend(["-o", output_file])
         
         # Add optional parameters
         if extensions:
@@ -190,12 +203,16 @@ class GobusterScanner:
                 result = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
                 stdout, stderr, returncode = result.stdout, result.stderr, result.returncode
             
-            # Parse results
-            self.parse_gobuster_output(output_file, scan_type)
+            # Parse results (only from file if not display-only)
+            if not self.display_only:
+                self.parse_gobuster_output(output_file, scan_type)
+            else:
+                # In display-only mode, parse from stdout
+                self.parse_gobuster_output_from_text(stdout, scan_type)
             
             return {
                 'success': returncode == 0,
-                'output': output_file,
+                'output': output_file if not self.display_only else "console",
                 'stderr': stderr,
                 'stdout': stdout
             }
@@ -213,10 +230,13 @@ class GobusterScanner:
             "-u", self.target,
             "-w", wordlist,
             "-t", str(self.threads),
-            "-o", output_file,
             "--timeout", f"{self.timeout}s",
             "-k",
         ]
+        
+        # Only add output file if not in display-only mode
+        if not self.display_only:
+            cmd.extend(["-o", output_file])
         
         if domain:
             cmd.extend(["--domain", domain])
@@ -236,11 +256,14 @@ class GobusterScanner:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
             
             # Parse results
-            self.parse_gobuster_output(output_file, "vhost")
+            if not self.display_only:
+                self.parse_gobuster_output(output_file, "vhost")
+            else:
+                self.parse_gobuster_output_from_text(result.stdout, "vhost")
             
             return {
                 'success': result.returncode == 0,
-                'output': output_file,
+                'output': output_file if not self.display_only else "console",
                 'stderr': result.stderr
             }
         except subprocess.TimeoutExpired:
@@ -257,9 +280,12 @@ class GobusterScanner:
             "-d", domain,
             "-w", wordlist,
             "-t", str(self.threads),
-            "-o", output_file,
             "--timeout", f"{self.timeout}s",
         ]
+        
+        # Only add output file if not in display-only mode
+        if not self.display_only:
+            cmd.extend(["-o", output_file])
         
         if not self.verbose:
             cmd.append("-q")
@@ -270,11 +296,14 @@ class GobusterScanner:
             result = subprocess.run(cmd, capture_output=True, text=True, timeout=1200)
             
             # Parse DNS results
-            self.parse_dns_output(output_file, domain)
+            if not self.display_only:
+                self.parse_dns_output(output_file, domain)
+            else:
+                self.parse_dns_output_from_text(result.stdout, domain)
             
             return {
                 'success': result.returncode == 0,
-                'output': output_file,
+                'output': output_file if not self.display_only else "console",
                 'stderr': result.stderr
             }
         except subprocess.TimeoutExpired:
@@ -336,17 +365,20 @@ class GobusterScanner:
         # Update with deduplicated results
         self.all_results['subdomains'] = unique_results
         
-        # Save merged results to a combined file
-        merged_file = os.path.join(self.results_dir, "subdomains_all.txt")
-        with open(merged_file, 'w') as f:
-            f.write("# Combined Subdomain Enumeration Results\n")
-            f.write(f"# Total Unique Subdomains: {len(unique_results)}\n")
-            f.write("# Format: subdomain | IP | Source\n\n")
+        # Save merged results to a combined file (skip if display-only)
+        if not self.display_only:
+            merged_file = os.path.join(self.results_dir, "subdomains_all.txt")
+            with open(merged_file, 'w') as f:
+                f.write("# Combined Subdomain Enumeration Results\n")
+                f.write(f"# Total Unique Subdomains: {len(unique_results)}\n")
+                f.write("# Format: subdomain | IP | Source\n\n")
+                
+                for result in sorted(unique_results, key=lambda x: x['path']):
+                    f.write(f"{result['path']} | {result['size']} | {result['status']}\n")
             
-            for result in sorted(unique_results, key=lambda x: x['path']):
-                f.write(f"{result['path']} | {result['size']} | {result['status']}\n")
-        
-        logging.info(f"Merged results saved to: {merged_file}")
+            logging.info(f"Merged results saved to: {merged_file}")
+        else:
+            logging.info(f"Merged {len(unique_results)} unique subdomains (display-only mode)")
     
     def parse_gobuster_output(self, output_file, scan_type):
         """Parse gobuster output and store results"""
@@ -383,6 +415,72 @@ class GobusterScanner:
                     elif scan_type == "dns":
                         self.all_results['subdomains'].append(result)
     
+    def parse_gobuster_output_from_text(self, text, scan_type):
+        """Parse gobuster output from text/stdout for display-only mode"""
+        for line in text.split('\n'):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            
+            # Parse different output formats
+            # Format: /path (Status: 200) [Size: 1234]
+            match = re.search(r'(\S+)\s+\(Status: (\d+)\)', line)
+            if match:
+                path, status = match.groups()
+                size_match = re.search(r'\[Size: (\d+)\]', line)
+                size = size_match.group(1) if size_match else "N/A"
+                
+                result = {
+                    'path': path,
+                    'status': status,
+                    'size': size,
+                    'full_url': f"{self.target}{path}" if scan_type != "vhost" else path
+                }
+                
+                # Print result immediately in display-only mode
+                logging.info(f"[{scan_type.upper()}] {path} (Status: {status}) [Size: {size}]")
+                
+                if scan_type == "dir":
+                    self.all_results['directories'].append(result)
+                elif scan_type == "files":
+                    self.all_results['files'].append(result)
+                elif scan_type == "vhost":
+                    self.all_results['vhosts'].append(result)
+    
+    def parse_dns_output_from_text(self, text, domain):
+        """Parse gobuster DNS output from text/stdout for display-only mode"""
+        for line in text.split('\n'):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            
+            # Format: Found: subdomain.domain.com [IP: 1.2.3.4]
+            parts = line.split()
+            if parts:
+                subdomain = parts[0].replace('Found:', '').strip()
+                
+                # Extract IP if present
+                ip = "N/A"
+                ip_match = re.search(r'\[IP: ([^\]]+)\]', line)
+                if ip_match:
+                    ip = ip_match.group(1)
+                elif len(parts) > 1:
+                    potential_ip = parts[-1]
+                    if re.match(r'^\d+\.\d+\.\d+\.\d+$', potential_ip):
+                        ip = potential_ip
+                
+                result = {
+                    'path': subdomain,
+                    'status': 'Found',
+                    'size': ip,
+                    'full_url': f"http://{subdomain}"
+                }
+                
+                # Print result immediately in display-only mode
+                logging.info(f"[DNS] {subdomain} -> {ip}")
+                
+                self.all_results['subdomains'].append(result)
+    
     def scan_directories(self, extensions=None):
         """Scan for directories using raft medium directories wordlist"""
         logging.info(f"Starting directory enumeration on {self.target}")
@@ -390,7 +488,7 @@ class GobusterScanner:
         logging.info(f"Threads: {self.threads}")
         logging.info(f"Status codes: {self.status_codes}")
         
-        output_file = os.path.join(self.results_dir, "directories.txt")
+        output_file = os.path.join(self.results_dir, "directories.txt") if not self.display_only else "/dev/null"
         start_time = time.time()
         
         result = self.run_gobuster_dir(self.dir_wordlist, output_file, extensions, "dir")
@@ -412,7 +510,7 @@ class GobusterScanner:
         logging.info(f"Extensions: {extensions}")
         logging.info(f"Threads: {self.threads}")
         
-        output_file = os.path.join(self.results_dir, "files.txt")
+        output_file = os.path.join(self.results_dir, "files.txt") if not self.display_only else "/dev/null"
         start_time = time.time()
         
         result = self.run_gobuster_dir(self.file_wordlist, output_file, extensions, "files")
@@ -436,7 +534,7 @@ class GobusterScanner:
         logging.info(f"Wordlist: {wordlist}")
         logging.info(f"Threads: {self.threads}")
         
-        output_file = os.path.join(self.results_dir, "vhosts.txt")
+        output_file = os.path.join(self.results_dir, "vhosts.txt") if not self.display_only else "/dev/null"
         start_time = time.time()
         
         result = self.run_gobuster_vhost(wordlist, output_file, domain)
@@ -473,7 +571,7 @@ class GobusterScanner:
         
         # Run DNS enumeration
         logging.info("\n[1/2] Starting DNS resolution-based enumeration...")
-        output_file_dns = os.path.join(self.results_dir, "subdomains_dns.txt")
+        output_file_dns = os.path.join(self.results_dir, "subdomains_dns.txt") if not self.display_only else "/dev/null"
         start_time = time.time()
         
         result_dns = self.run_gobuster_dns(wordlist, output_file_dns, domain)
@@ -489,7 +587,7 @@ class GobusterScanner:
         # Run VHost enumeration if enabled
         if include_vhost and self.target:
             logging.info("\n[2/2] Starting VHost-based enumeration...")
-            output_file_vhost = os.path.join(self.results_dir, "subdomains_vhost.txt")
+            output_file_vhost = os.path.join(self.results_dir, "subdomains_vhost.txt") if not self.display_only else "/dev/null"
             start_time = time.time()
             
             result_vhost = self.run_gobuster_vhost(wordlist, output_file_vhost, domain)
@@ -554,6 +652,10 @@ class GobusterScanner:
     
     def display_results(self, output_file):
         """Display scan results"""
+        # Skip file display in display-only mode (results already printed)
+        if self.display_only:
+            return
+            
         if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
             logging.info(f"\n--- Results from {output_file} ---")
             with open(output_file, 'r') as f:
@@ -576,18 +678,22 @@ class GobusterScanner:
         logging.info(f"Files found: {len(self.all_results['files'])}")
         logging.info(f"VHosts found: {len(self.all_results['vhosts'])}")
         logging.info(f"Subdomains found: {len(self.all_results['subdomains'])}")
-        logging.info(f"Results directory: {self.results_dir}")
+        if not self.display_only:
+            logging.info(f"Results directory: {self.results_dir}")
+        else:
+            logging.info("Mode: DISPLAY-ONLY (no files saved)")
         logging.info("="*60)
         
-        # Save in different formats
-        if self.output_format == "json" or self.output_format == "all":
-            self.save_json_report()
+        # Save in different formats (skip if display-only)
+        if not self.display_only:
+            if self.output_format == "json" or self.output_format == "all":
+                self.save_json_report()
         
-        if self.output_format == "csv" or self.output_format == "all":
-            self.save_csv_report()
-        
-        if self.output_format == "html" or self.output_format == "all":
-            self.save_html_report()
+            if self.output_format == "csv" or self.output_format == "all":
+                self.save_csv_report()
+            
+            if self.output_format == "html" or self.output_format == "all":
+                self.save_html_report()
     
     def save_json_report(self):
         """Save results in JSON format"""
@@ -788,6 +894,8 @@ Examples:
                         help='Delay between requests in milliseconds (default: 0)')
     parser.add_argument('-v', '--verbose', action='store_true',
                         help='Verbose output')
+    parser.add_argument('--display-only', action='store_true',
+                        help='Display results only without creating directories or saving files')
     
     args = parser.parse_args()
     
@@ -816,7 +924,8 @@ Examples:
         user_agent=args.user_agent,
         cookies=args.cookies,
         proxy=args.proxy,
-        delay=args.delay
+        delay=args.delay,
+        display_only=args.display_only
     )
     
     # Check if gobuster is installed

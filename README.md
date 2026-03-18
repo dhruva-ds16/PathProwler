@@ -1,48 +1,94 @@
+<div align="center">
+
 # 🐾 PathProwler
 
-A powerful reconnaissance tool with both CLI and TUI interfaces for directory busting, file discovery, VHost scanning, and subdomain enumeration. Prowl through paths and discover hidden treasures. Built on gobuster with enhanced features and a beautiful interface.
+### *Prowl through paths and discover hidden treasures*
 
-![Version](https://img.shields.io/badge/version-2.0-blue)
-![Python](https://img.shields.io/badge/python-3.8+-green)
-![License](https://img.shields.io/badge/license-MIT-orange)
+[![Version](https://img.shields.io/badge/version-2.0-blue?style=for-the-badge)](https://github.com/yourusername/pathprowler/releases)
+[![Python](https://img.shields.io/badge/python-3.8+-green?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org)
+[![License](https://img.shields.io/badge/license-MIT-orange?style=for-the-badge)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey?style=for-the-badge)](https://github.com/yourusername/pathprowler)
+
+**A powerful reconnaissance tool with dual interfaces (CLI & TUI) for directory busting, file discovery, VHost scanning, and subdomain enumeration.**
+
+Built on [gobuster](https://github.com/OJ/gobuster) with enhanced features and a beautiful interactive dashboard.
+
+[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Documentation](#-documentation) • [Examples](#-examples)
+
+![PathProwler Demo](https://via.placeholder.com/800x400/1a1b26/7aa2f7?text=PathProwler+TUI+Dashboard)
+
+</div>
+
+---
 
 ## ✨ Features
 
-### 🎨 Dual Interface
-*Prowl through paths and discover hidden treasures*
-- **TUI (Terminal UI)** - Beautiful interactive dashboard with real-time monitoring
-- **CLI** - Powerful command-line interface for automation and scripting
+<table>
+<tr>
+<td width="50%">
 
-### 🔍 Comprehensive Scanning
-- **Directory Busting** - Find hidden directories and paths
-- **File Discovery** - Enumerate files with custom extensions
-- **VHost Scanning** - Discover virtual hosts
-- **DNS Enumeration** - Resolve subdomains via DNS
-- **Subdomain Enumeration** - Combine DNS + VHost for maximum coverage
+### 🎨 **Dual Interface**
 
-### ⚡ Performance
-- **Parallel Scanning** - Run multiple scan types simultaneously
-- **Configurable Threads** - Adjust speed (default: 50, max: 200+)
-- **Smart Timeouts** - Configurable request timeouts
-- **Progress Tracking** - Real-time statistics and status
+- 🖥️ **TUI Dashboard** - Beautiful interactive terminal UI
+  - Real-time monitoring
+  - Live statistics
+  - Tabbed result views
+  - Keyboard shortcuts
 
-### 📊 Output Formats
-- **JSON** - Structured data for automation
-- **CSV** - Spreadsheet-compatible format
-- **HTML** - Visual reports with clickable links
-- **TXT** - Raw gobuster output
+- ⌨️ **CLI Tool** - Powerful command-line interface
+  - Automation-friendly
+  - Scriptable
+  - Multiple output formats
+  - Pipe-able results
 
-### 🎯 Advanced Features
-- **Recursive Scanning** - Deep directory enumeration
-- **Custom Status Codes** - Filter by HTTP response codes
-- **Proxy Support** - Route through Burp Suite or other proxies
-- **Rate Limiting** - Add delays between requests
-- **Custom User Agents** - Bypass basic filters
-- **Result Deduplication** - Automatic merging of subdomain results
+</td>
+<td width="50%">
 
-## 🚀 Quick Start
+### 🔍 **Comprehensive Scanning**
 
-### Installation
+- 📁 **Directory Busting** - Hidden paths
+- 📄 **File Discovery** - Custom extensions
+- 🌐 **VHost Scanning** - Virtual hosts
+- 🔎 **DNS Enumeration** - Subdomain resolution
+- 🎯 **Dual Subdomain Enum** - DNS + VHost combined
+
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+### ⚡ **Performance**
+
+- 🚀 Parallel scanning (multiple types simultaneously)
+- ⚙️ Configurable threads (50-200+)
+- ⏱️ Smart timeouts
+- 📊 Real-time progress tracking
+- 💾 Memory efficient
+
+</td>
+<td width="50%">
+
+### 📊 **Output Formats**
+
+- 📋 **JSON** - Structured data
+- 📈 **CSV** - Spreadsheet format
+- 🌐 **HTML** - Visual reports
+- 📝 **TXT** - Raw output
+- 🖥️ **Display-only** - No file saving
+
+</td>
+</tr>
+</table>
+
+### 🎯 **Advanced Features**
+
+```
+✓ Recursive Scanning          ✓ Custom Status Codes       ✓ Proxy Support (Burp Suite)
+✓ Rate Limiting               ✓ Custom User Agents        ✓ Result Deduplication
+✓ Cookie Support              ✓ Domain-based Naming       ✓ Comprehensive Logging
+```
+
+## 🚀 Installation
 
 **Windows (PowerShell):**
 ```powershell
@@ -55,65 +101,112 @@ chmod +x install.sh
 ./install.sh
 ```
 
-The installer automatically:
-1. ✅ Checks prerequisites (Python, PathProwler)
-2. ✅ Creates virtual environment
-3. ✅ Installs dependencies
-4. ✅ Offers to launch the TUI
-
-### Running the Tools
-
-**TUI Dashboard:**
-```bash
-.\run.ps1    # Windows
-./run.sh     # Linux/Mac
+**What the installer does:**
+```
+✓ Checks prerequisites (Python 3.8+, Gobuster)
+✓ Creates virtual environment
+✓ Installs dependencies (textual, rich)
+✓ Offers to launch the TUI
 ```
 
-**CLI:**
-```bash
-# Activate virtual environment
-.\venv\Scripts\Activate.ps1  # Windows
-source venv/bin/activate     # Linux/Mac
+### Quick Start
 
-# Run scans
-python pathprowler.py -u http://target.com -m all -d target.com -o all
+<table>
+<tr>
+<td width="50%">
+
+**🖥️ TUI Dashboard**
+```bash
+# Windows
+.\run.ps1
+
+# Linux/macOS
+./run.sh
 ```
+
+</td>
+<td width="50%">
+
+**⌨️ CLI Tool**
+```bash
+# Activate venv
+source venv/bin/activate
+
+# Run scan
+python pathprowler.py -u http://target.com -m all
+```
+
+</td>
+</tr>
+</table>
+
+## 💡 Why PathProwler?
+
+<table>
+<tr>
+<td>
+
+**🎯 Problem**
+- Gobuster is powerful but CLI-only
+- No real-time monitoring
+- Manual result management
+- Separate tools for different scans
+
+</td>
+<td>
+
+**✨ Solution**
+- Beautiful TUI + powerful CLI
+- Live statistics and progress
+- Automatic organization by domain/IP
+- Unified tool for all scan types
+
+</td>
+</tr>
+</table>
 
 ## 📖 Documentation
 
-- **[INSTALLATION.md](INSTALLATION.md)** - Detailed installation guide
-- **[README_TUI.md](README_TUI.md)** - TUI dashboard documentation
-- **[SUBDOMAIN_ENUMERATION.md](SUBDOMAIN_ENUMERATION.md)** - Subdomain scanning guide
-- **[DIRECTORY_NAMING.md](DIRECTORY_NAMING.md)** - Output organization
-- **[DNS_USAGE.md](DNS_USAGE.md)** - DNS enumeration guide
+| Document | Description |
+|----------|-------------|
+| [📦 INSTALLATION.md](INSTALLATION.md) | Complete installation guide with troubleshooting |
+| [🖥️ README_TUI.md](README_TUI.md) | TUI dashboard features and usage |
+| [🔍 SUBDOMAIN_ENUMERATION.md](SUBDOMAIN_ENUMERATION.md) | Comprehensive subdomain scanning guide |
+| [📁 DIRECTORY_NAMING.md](DIRECTORY_NAMING.md) | Output organization and naming conventions |
+| [🌐 DNS_USAGE.md](DNS_USAGE.md) | DNS enumeration techniques and examples |
 
-## 🎯 Usage Examples
+## 📚 Usage
 
-### TUI (Interactive Dashboard)
+### 🖥️ TUI (Interactive Dashboard)
+
+Launch the beautiful terminal interface:
 
 ```bash
-# Start the dashboard
-.\run.ps1  # Windows
-./run.sh   # Linux/Mac
+# Windows
+.\run.ps1
 
-# Configure in the UI:
-# - Target URL: http://example.com
-# - Domain: example.com
-# - Scan Mode: Subdomain Enum (DNS + VHost)
-# - Threads: 100
-# - Press 's' to start
+# Linux/macOS
+./run.sh
 ```
 
-**Features:**
-- 📊 Real-time statistics
-- 📋 Live results table
-- 🔍 Separate tabs for DNS, VHost, Directory, File scans
-- 📝 Console log with status messages
-- ⌨️ Keyboard shortcuts (s=start, x=stop, e=export, q=quit)
+**Dashboard Features:**
+```
+✓ Real-time statistics       ✓ Live results table        ✓ Tabbed scan views
+✓ Console logging           ✓ Keyboard shortcuts        ✓ Export functionality
+```
 
-### CLI (Command Line)
+**Keyboard Shortcuts:**
+| Key | Action |
+|-----|--------|
+| `s` | Start Scan |
+| `x` | Stop Scan |
+| `e` | Export Results |
+| `q` | Quit |
+| `Tab` | Navigate Tabs |
 
-#### Comprehensive Subdomain Enumeration
+### ⌨️ CLI (Command Line)
+
+#### 🎯 Comprehensive Subdomain Enumeration
 ```bash
 # DNS + VHost scanning (recommended)
 python pathprowler.py -u http://example.com -m subdomain -d example.com -o all
@@ -125,7 +218,7 @@ python pathprowler.py -u http://example.com -m subdomain -d example.com -o all
 # - results.json, results.csv, results.html
 ```
 
-#### Directory Busting
+#### 📁 Directory Busting
 ```bash
 # Basic directory scan
 python pathprowler.py -u http://example.com -m dir
@@ -137,7 +230,7 @@ python pathprowler.py -u http://example.com -m dir -R -s "200,301,302,403"
 python pathprowler.py -u http://example.com -m dir -t 100
 ```
 
-#### File Discovery
+#### 📄 File Discovery
 ```bash
 # Scan for specific file types
 python pathprowler.py -u http://example.com -m files -e php,asp,jsp,html
@@ -146,25 +239,25 @@ python pathprowler.py -u http://example.com -m files -e php,asp,jsp,html
 python pathprowler.py -u http://example.com -m files -e txt,pdf,zip -R
 ```
 
-#### VHost Scanning
+#### 🌐 VHost Scanning
 ```bash
 # Discover virtual hosts
 python pathprowler.py -u http://example.com -m vhost -d example.com
 ```
 
-#### DNS Enumeration Only
+#### 🔎 DNS Enumeration Only
 ```bash
 # Pure DNS resolution
 python pathprowler.py -u http://example.com -m dns -d example.com
 ```
 
-#### All Scans in Parallel
+#### 🚀 All Scans in Parallel
 ```bash
 # Run everything (dir + files + subdomain enumeration)
 python pathprowler.py -u http://example.com -m all -d example.com -o all
 ```
 
-#### Advanced Options
+#### ⚙️ Advanced Options
 ```bash
 # Through proxy (Burp Suite)
 python pathprowler.py -u http://example.com -m all -p http://127.0.0.1:8080
@@ -378,83 +471,92 @@ cat "pathprowler_$DOMAIN/subdomains_all.txt" | grep -v "^#" | cut -d'|' -f1 > su
 
 ## 🐛 Troubleshooting
 
-### Common Issues
+<details>
+<summary><b>Click to expand common issues</b></summary>
 
-**"Python not found"**
+### Python not found
 ```bash
-# Install Python 3.8+
-# Windows: https://www.python.org/downloads/
-# Linux: sudo apt install python3
-# macOS: brew install python3
+# Windows
+winget install Python.Python.3.11
+
+# Linux
+sudo apt install python3 python3-pip
+
+# macOS
+brew install python3
 ```
 
-**"Gobuster not found"**
+### Gobuster not found
 ```bash
-# Install gobuster
-# Windows: choco install gobuster
-# Linux: sudo apt install gobuster
-# macOS: brew install gobuster
+# Windows
+choco install gobuster
+
+# Linux
+sudo apt install gobuster
+
+# macOS
+brew install gobuster
 ```
 
-**"Virtual environment not found"**
+### Virtual environment issues
 ```bash
-# Run installer
+# Re-run installer
 .\install.ps1  # Windows
 ./install.sh   # Linux/Mac
 ```
 
-**"Permission denied" (Linux/Mac)**
+### Permission denied (Linux/macOS)
 ```bash
 chmod +x install.sh run.sh
 ```
 
-**See [INSTALLATION.md](INSTALLATION.md) for detailed troubleshooting.**
+**📚 For detailed troubleshooting, see [INSTALLATION.md](INSTALLATION.md)**
+
+</details>
+
+## 🤝 Contributing
+
+Contributions are welcome! Here's how you can help:
+
+- 🐛 Report bugs and issues
+- 💡 Suggest new features
+- 📝 Improve documentation
+- 🚀 Submit pull requests
+
+## ⭐ Show Your Support
+
+If you find PathProwler useful, please consider:
+
+- ⭐ Starring this repository
+- 🐣 Sharing it with others
+- 💬 Providing feedback
 
 ## 📝 License
 
-MIT License - Feel free to use and modify!
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Credits
+## 🙏 Credits & Acknowledgments
 
-- **Gobuster** - OJ Reeves ([GitHub](https://github.com/OJ/gobuster))
-- **SecLists** - Daniel Miessler ([GitHub](https://github.com/danielmiessler/SecLists))
-- **Textual** - Textualize ([GitHub](https://github.com/Textualize/textual))
-- **Rich** - Will McGugan ([GitHub](https://github.com/Textualize/rich))
+Built with ❤️ using these amazing tools:
 
-## 🚀 Quick Reference
-
-### Installation
-```bash
-.\install.ps1  # Windows
-./install.sh   # Linux/Mac
-```
-
-### Run TUI
-```bash
-.\run.ps1   # Windows
-./run.sh    # Linux/Mac
-```
-
-### Run CLI
-```bash
-# Comprehensive scan
-python pathprowler.py -u http://target.com -m all -d target.com -o all
-
-# Subdomain enumeration
-python pathprowler.py -u http://target.com -m subdomain -d target.com
-
-# Directory busting
-python pathprowler.py -u http://target.com -m dir -t 100
-```
-
-### Output Location
-```
-pathprowler_<domain_or_ip>/
-├── subdomains_all.txt  # Merged subdomains
-├── results.json        # Structured data
-└── scan.log           # Detailed logs
-```
+| Tool | Author | Description |
+|------|--------|-------------|
+| [Gobuster](https://github.com/OJ/gobuster) | OJ Reeves | Core scanning engine |
+| [SecLists](https://github.com/danielmiessler/SecLists) | Daniel Miessler | Wordlists |
+| [Textual](https://github.com/Textualize/textual) | Textualize | TUI framework |
+| [Rich](https://github.com/Textualize/rich) | Will McGugan | Terminal formatting |
 
 ---
 
-**Happy Prowling! 🐾🎯**
+<div align="center">
+
+### 🐾 Happy Prowling! 🎯
+
+**Made with ❤️ for the security community**
+
+[![GitHub stars](https://img.shields.io/github/stars/yourusername/pathprowler?style=social)](https://github.com/yourusername/pathprowler/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/yourusername/pathprowler?style=social)](https://github.com/yourusername/pathprowler/network/members)
+
+[Report Bug](https://github.com/yourusername/pathprowler/issues) • [Request Feature](https://github.com/yourusername/pathprowler/issues) • [Documentation](https://github.com/yourusername/pathprowler/wiki)
+
+</div>

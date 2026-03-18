@@ -1,9 +1,10 @@
 #!/bin/bash
-# Gobuster Pro - Installation Script for Linux/Mac
+# PathProwler - Installation Script for Linux/Mac
+# Prowl through paths and discover hidden treasures 🐾
 # This script creates a virtual environment, installs dependencies, and runs the TUI
 
 echo "========================================"
-echo "  Gobuster Pro - Installation Script  "
+echo "  PathProwler - Installation Script  "
 echo "========================================"
 echo ""
 
@@ -87,11 +88,11 @@ echo -e "${GREEN}========================================${NC}"
 echo -e "${GREEN}  Installation Complete!              ${NC}"
 echo -e "${GREEN}========================================${NC}"
 echo ""
-echo -e "${CYAN}To run Gobuster Pro TUI:${NC}"
+echo -e "${CYAN}To run PathProwler TUI:${NC}"
 echo -e "  ${NC}./run.sh${NC}"
 echo ""
 echo -e "${CYAN}To run CLI version:${NC}"
-echo -e "  ${NC}./venv/bin/python gobuster_scan.py -u http://target.com -m all${NC}"
+echo -e "  ${NC}./venv/bin/python pathprowler.py -u http://target.com -m all${NC}"
 echo ""
 echo -e "${CYAN}To activate the virtual environment manually:${NC}"
 echo -e "  ${NC}source venv/bin/activate${NC}"
@@ -103,9 +104,9 @@ read -r response
 
 if [[ "$response" =~ ^[Yy]$ ]]; then
     echo ""
-    echo -e "${CYAN}[*] Starting Gobuster Pro TUI...${NC}"
+    echo -e "${CYAN}[*] Starting PathProwler TUI...${NC}"
     echo ""
-    ./venv/bin/python gobuster_tui.py
+    ./venv/bin/python pathprowler_tui.py
 else
     echo ""
     echo -e "${CYAN}[*] You can run the TUI anytime with: ./run.sh${NC}"

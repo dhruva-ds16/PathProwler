@@ -1,6 +1,6 @@
 # Comprehensive Subdomain Enumeration Guide
 
-Gobuster Pro now includes **dual-technique subdomain enumeration** combining DNS resolution and VHost scanning for maximum coverage.
+PathProwler now includes **dual-technique subdomain enumeration** combining DNS resolution and VHost scanning for maximum coverage.
 
 ## Why Two Techniques?
 
@@ -28,7 +28,7 @@ Using **both techniques** gives you:
 Pure DNS resolution-based enumeration.
 
 ```bash
-python gobuster_scan.py -u http://target.com -m dns -d target.com
+python pathprowler.py -u http://target.com -m dns -d target.com
 ```
 
 **Output:**
@@ -39,7 +39,7 @@ python gobuster_scan.py -u http://target.com -m dns -d target.com
 Pure virtual host scanning.
 
 ```bash
-python gobuster_scan.py -u http://target.com -m vhost -d target.com
+python pathprowler.py -u http://target.com -m vhost -d target.com
 ```
 
 **Output:**
@@ -50,7 +50,7 @@ python gobuster_scan.py -u http://target.com -m vhost -d target.com
 **RECOMMENDED** - Combines both techniques!
 
 ```bash
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com
+python pathprowler.py -u http://target.com -m subdomain -d target.com
 ```
 
 **Output:**
@@ -70,7 +70,7 @@ python gobuster_scan.py -u http://target.com -m subdomain -d target.com
 Everything: directories, files, and comprehensive subdomain enumeration.
 
 ```bash
-python gobuster_scan.py -u http://target.com -m all -d target.com -o all
+python pathprowler.py -u http://target.com -m all -d target.com -o all
 ```
 
 ## CLI Examples
@@ -78,19 +78,19 @@ python gobuster_scan.py -u http://target.com -m all -d target.com -o all
 ### Quick Subdomain Discovery
 ```bash
 # Fast scan with 100 threads
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com -t 100
+python pathprowler.py -u http://target.com -m subdomain -d target.com -t 100
 ```
 
 ### Comprehensive Scan with All Output Formats
 ```bash
 # Get JSON, CSV, HTML reports
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com -o all
+python pathprowler.py -u http://target.com -m subdomain -d target.com -o all
 ```
 
 ### Stealth Subdomain Enumeration
 ```bash
 # Slower, less noisy
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
+python pathprowler.py -u http://target.com -m subdomain -d target.com \
   -t 25 \
   --delay 100 \
   --timeout 15
@@ -99,7 +99,7 @@ python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
 ### Maximum Speed
 ```bash
 # Aggressive scanning
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
+python pathprowler.py -u http://target.com -m subdomain -d target.com \
   -t 200 \
   --timeout 3
 ```
@@ -107,7 +107,7 @@ python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
 ### Through Proxy (Burp Suite)
 ```bash
 # Route through proxy for analysis
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
+python pathprowler.py -u http://target.com -m subdomain -d target.com \
   -p http://127.0.0.1:8080
 ```
 
@@ -115,7 +115,7 @@ python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
 
 ### Start Dashboard
 ```bash
-python gobuster_tui.py
+python pathprowler_tui.py
 ```
 
 ### Configure Subdomain Scan
@@ -140,7 +140,7 @@ python gobuster_tui.py
 
 ### Directory Structure
 ```
-gobuster_results_20260317_174530/
+pathprowler_results_20260317_174530/
 ├── subdomains_dns.txt       # DNS enumeration results
 ├── subdomains_vhost.txt     # VHost enumeration results
 ├── subdomains_all.txt       # ⭐ Merged & deduplicated
@@ -193,25 +193,25 @@ www.target.com | 1.2.3.4 | Found
 ### Phase 1: Initial Discovery
 ```bash
 # Quick scan to find low-hanging fruit
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com -t 100 -o json
+python pathprowler.py -u http://target.com -m subdomain -d target.com -t 100 -o json
 ```
 
 ### Phase 2: Analyze Results
 ```bash
 # View unique subdomains
-cat gobuster_results_*/subdomains_all.txt
+cat pathprowler_results_*/subdomains_all.txt
 
 # Extract just subdomain names
-grep -v "^#" gobuster_results_*/subdomains_all.txt | cut -d'|' -f1 | tr -d ' '
+grep -v "^#" pathprowler_results_*/subdomains_all.txt | cut -d'|' -f1 | tr -d ' '
 
 # Count findings
-grep -v "^#" gobuster_results_*/subdomains_all.txt | wc -l
+grep -v "^#" pathprowler_results_*/subdomains_all.txt | wc -l
 ```
 
 ### Phase 3: Validate Findings
 ```bash
 # Check which are actually accessible
-for sub in $(grep -v "^#" gobuster_results_*/subdomains_all.txt | cut -d'|' -f1 | tr -d ' '); do
+for sub in $(grep -v "^#" pathprowler_results_*/subdomains_all.txt | cut -d'|' -f1 | tr -d ' '); do
   echo "Testing $sub..."
   curl -I -s "http://$sub" | head -1
 done
@@ -220,9 +220,9 @@ done
 ### Phase 4: Deep Dive
 ```bash
 # Scan each discovered subdomain for directories
-for sub in $(grep -v "^#" gobuster_results_*/subdomains_all.txt | cut -d'|' -f1 | tr -d ' '); do
+for sub in $(grep -v "^#" pathprowler_results_*/subdomains_all.txt | cut -d'|' -f1 | tr -d ' '); do
   echo "Scanning $sub..."
-  python gobuster_scan.py -u "http://$sub" -m dir -e php,html,txt
+  python pathprowler.py -u "http://$sub" -m dir -e php,html,txt
 done
 ```
 
@@ -231,7 +231,7 @@ done
 ### Custom Wordlist
 ```bash
 # Use a different wordlist
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
+python pathprowler.py -u http://target.com -m subdomain -d target.com \
   -w /path/to/custom/wordlists
 ```
 
@@ -240,7 +240,7 @@ python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
 #### Export for Aquatone
 ```bash
 # Generate list for screenshot tool
-grep -v "^#" gobuster_results_*/subdomains_all.txt | \
+grep -v "^#" pathprowler_results_*/subdomains_all.txt | \
   cut -d'|' -f1 | tr -d ' ' > subdomains.txt
 cat subdomains.txt | aquatone
 ```
@@ -248,7 +248,7 @@ cat subdomains.txt | aquatone
 #### Export for Nmap
 ```bash
 # Scan all discovered subdomains
-grep -v "^#" gobuster_results_*/subdomains_all.txt | \
+grep -v "^#" pathprowler_results_*/subdomains_all.txt | \
   cut -d'|' -f2 | tr -d ' ' | grep -v "N/A" | \
   xargs -I {} nmap -sV -p- {}
 ```
@@ -256,7 +256,7 @@ grep -v "^#" gobuster_results_*/subdomains_all.txt | \
 #### Export for Nuclei
 ```bash
 # Vulnerability scanning
-grep -v "^#" gobuster_results_*/subdomains_all.txt | \
+grep -v "^#" pathprowler_results_*/subdomains_all.txt | \
   cut -d'|' -f1 | tr -d ' ' | \
   sed 's/^/http:\/\//' > urls.txt
 nuclei -l urls.txt
@@ -266,14 +266,14 @@ nuclei -l urls.txt
 
 ### Fast Network (100+ Mbps)
 ```bash
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
+python pathprowler.py -u http://target.com -m subdomain -d target.com \
   -t 200 \
   --timeout 3
 ```
 
 ### Slow Network / Rate Limited
 ```bash
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
+python pathprowler.py -u http://target.com -m subdomain -d target.com \
   -t 25 \
   --timeout 15 \
   --delay 200
@@ -281,7 +281,7 @@ python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
 
 ### Balanced (Default)
 ```bash
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
+python pathprowler.py -u http://target.com -m subdomain -d target.com \
   -t 50 \
   --timeout 10
 ```
@@ -342,19 +342,19 @@ python gobuster_scan.py -u http://target.com -m subdomain -d target.com \
 nslookup target.com
 
 # Try smaller wordlist first
-python gobuster_scan.py -u http://target.com -m dns -d target.com
+python pathprowler.py -u http://target.com -m dns -d target.com
 
 # Increase timeout
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com --timeout 20
+python pathprowler.py -u http://target.com -m subdomain -d target.com --timeout 20
 ```
 
 ### Too Slow
 ```bash
 # Reduce threads
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com -t 25
+python pathprowler.py -u http://target.com -m subdomain -d target.com -t 25
 
 # Use DNS only (faster)
-python gobuster_scan.py -u http://target.com -m dns -d target.com
+python pathprowler.py -u http://target.com -m dns -d target.com
 ```
 
 ### Duplicates in Results
@@ -364,10 +364,10 @@ The tool automatically deduplicates! Check `subdomains_all.txt` for the clean li
 ```bash
 # Ensure target URL is correct
 # VHost requires HTTP/HTTPS target
-python gobuster_scan.py -u https://target.com -m subdomain -d target.com
+python pathprowler.py -u https://target.com -m subdomain -d target.com
 
 # Try DNS only if VHost doesn't work
-python gobuster_scan.py -u http://target.com -m dns -d target.com
+python pathprowler.py -u http://target.com -m dns -d target.com
 ```
 
 ## Security Considerations
@@ -401,10 +401,10 @@ OUTPUT_DIR="recon_${DOMAIN}_$(date +%Y%m%d)"
 mkdir -p "$OUTPUT_DIR"
 
 echo "[*] Starting subdomain enumeration for $DOMAIN"
-python gobuster_scan.py -u "http://$DOMAIN" -m subdomain -d "$DOMAIN" -o all
+python pathprowler.py -u "http://$DOMAIN" -m subdomain -d "$DOMAIN" -o all
 
 echo "[*] Copying results to $OUTPUT_DIR"
-cp -r gobuster_results_*/* "$OUTPUT_DIR/"
+cp -r pathprowler_results_*/* "$OUTPUT_DIR/"
 
 echo "[*] Extracting subdomain list"
 grep -v "^#" "$OUTPUT_DIR/subdomains_all.txt" | \
@@ -428,13 +428,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: Run Gobuster
         run: |
-          python gobuster_scan.py -u ${{ secrets.TARGET_URL }} \
+          python pathprowler.py -u ${{ secrets.TARGET_URL }} \
             -m subdomain -d ${{ secrets.TARGET_DOMAIN }} -o json
       - name: Upload Results
         uses: actions/upload-artifact@v2
         with:
           name: subdomain-results
-          path: gobuster_results_*/
+          path: pathprowler_results_*/
 ```
 
 ## Best Practices
@@ -452,7 +452,7 @@ jobs:
 
 **For maximum subdomain discovery, use:**
 ```bash
-python gobuster_scan.py -u http://target.com -m subdomain -d target.com -o all
+python pathprowler.py -u http://target.com -m subdomain -d target.com -o all
 ```
 
 This gives you:

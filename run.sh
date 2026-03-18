@@ -1,5 +1,6 @@
 #!/bin/bash
-# Gobuster Pro - Run Script for Linux/Mac
+# PathProwler - Run Script for Linux/Mac
+# Prowl through paths and discover hidden treasures 🐾
 # This script runs the TUI using the virtual environment
 
 # Colors
@@ -15,6 +16,6 @@ if [ ! -f "venv/bin/python" ]; then
 fi
 
 # Run the TUI
-echo -e "${CYAN}[*] Starting Gobuster Pro TUI...${NC}"
+echo -e "${CYAN}[*] Starting PathProwler TUI...${NC}"
 echo ""
-./venv/bin/python gobuster_tui.py
+./venv/bin/python pathprowler_tui.py

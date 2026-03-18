@@ -1,6 +1,6 @@
 # DNS Subdomain Enumeration - Usage Guide
 
-DNS subdomain enumeration has been added to both the CLI and TUI versions of Gobuster Pro.
+DNS subdomain enumeration has been added to both the CLI and TUI versions of PathProwler.
 
 ## Features
 
@@ -15,22 +15,22 @@ DNS subdomain enumeration has been added to both the CLI and TUI versions of Gob
 ### DNS Scan Only
 ```bash
 # Basic DNS enumeration
-python gobuster_scan.py -u http://target.com -m dns -d target.com
+python pathprowler.py -u http://target.com -m dns -d target.com
 
 # Fast DNS scan with 100 threads
-python gobuster_scan.py -u http://target.com -m dns -d target.com -t 100
+python pathprowler.py -u http://target.com -m dns -d target.com -t 100
 
 # DNS scan with JSON output
-python gobuster_scan.py -u http://target.com -m dns -d target.com -o json
+python pathprowler.py -u http://target.com -m dns -d target.com -o json
 ```
 
 ### All Scans (Including DNS)
 ```bash
 # Run all scans in parallel (dir + files + vhost + dns)
-python gobuster_scan.py -u http://target.com -m all -d target.com
+python pathprowler.py -u http://target.com -m all -d target.com
 
 # All scans with custom settings
-python gobuster_scan.py -u http://target.com -m all -d target.com \
+python pathprowler.py -u http://target.com -m all -d target.com \
   -t 100 \
   --timeout 5 \
   -o all
@@ -39,7 +39,7 @@ python gobuster_scan.py -u http://target.com -m all -d target.com \
 ### Custom DNS Wordlist
 ```bash
 # Use a smaller wordlist for faster scanning
-python gobuster_scan.py -u http://target.com -m dns -d target.com \
+python pathprowler.py -u http://target.com -m dns -d target.com \
   -w /usr/share/wordlists/seclists
 
 # The tool uses: Discovery/DNS/subdomains-top1million-110000.txt
@@ -49,7 +49,7 @@ python gobuster_scan.py -u http://target.com -m dns -d target.com \
 
 ### Start the Dashboard
 ```bash
-python gobuster_tui.py
+python pathprowler_tui.py
 ```
 
 ### Configure DNS Scan
@@ -68,7 +68,7 @@ python gobuster_tui.py
 
 ### CLI Output
 ```
-gobuster_results_20260317_173045/
+pathprowler_results_20260317_173045/
 ├── subdomains.txt       # Raw gobuster DNS output
 ├── results.json         # Structured JSON with all results
 ├── results.csv          # CSV export
@@ -112,13 +112,13 @@ Subdomain,mail.target.com,Found,5.6.7.8,http://mail.target.com
 ### Fast Scan (Quick Discovery)
 ```bash
 # Use fewer threads for stability
-python gobuster_scan.py -u http://target.com -m dns -d target.com -t 50
+python pathprowler.py -u http://target.com -m dns -d target.com -t 50
 ```
 
 ### Maximum Speed
 ```bash
 # Increase threads and reduce timeout
-python gobuster_scan.py -u http://target.com -m dns -d target.com \
+python pathprowler.py -u http://target.com -m dns -d target.com \
   -t 200 \
   --timeout 3
 ```
@@ -126,7 +126,7 @@ python gobuster_scan.py -u http://target.com -m dns -d target.com \
 ### Comprehensive Scan
 ```bash
 # Use the full 110k wordlist with moderate speed
-python gobuster_scan.py -u http://target.com -m dns -d target.com \
+python pathprowler.py -u http://target.com -m dns -d target.com \
   -t 100 \
   --timeout 10
 ```
@@ -136,26 +136,26 @@ python gobuster_scan.py -u http://target.com -m dns -d target.com \
 ### 1. Quick Discovery
 ```bash
 # Start with DNS to find subdomains
-python gobuster_scan.py -u http://target.com -m dns -d target.com -o json
+python pathprowler.py -u http://target.com -m dns -d target.com -o json
 ```
 
 ### 2. Analyze Results
 ```bash
 # Check the JSON output
-cat gobuster_results_*/results.json | jq '.results.subdomains'
+cat pathprowler_results_*/results.json | jq '.results.subdomains'
 ```
 
 ### 3. Scan Found Subdomains
 ```bash
 # Use found subdomains as new targets
-python gobuster_scan.py -u http://www.target.com -m dir
-python gobuster_scan.py -u http://mail.target.com -m dir
+python pathprowler.py -u http://www.target.com -m dir
+python pathprowler.py -u http://mail.target.com -m dir
 ```
 
 ### 4. Full Reconnaissance
 ```bash
 # Run everything at once
-python gobuster_scan.py -u http://target.com -m all -d target.com -o all
+python pathprowler.py -u http://target.com -m all -d target.com -o all
 ```
 
 ## Common Subdomains Found
@@ -194,27 +194,27 @@ The wordlist typically discovers:
 ### Export for Further Analysis
 ```bash
 # Export to JSON for scripting
-python gobuster_scan.py -u http://target.com -m dns -d target.com -o json
+python pathprowler.py -u http://target.com -m dns -d target.com -o json
 
 # Parse with jq
-cat gobuster_results_*/results.json | jq -r '.results.subdomains[].path'
+cat pathprowler_results_*/results.json | jq -r '.results.subdomains[].path'
 ```
 
 ### Pipe to Other Tools
 ```bash
 # Extract subdomains and scan with nmap
-cat gobuster_results_*/subdomains.txt | grep -oE '[a-z0-9.-]+\.[a-z]+' | \
+cat pathprowler_results_*/subdomains.txt | grep -oE '[a-z0-9.-]+\.[a-z]+' | \
   xargs -I {} nmap -sV {}
 ```
 
 ### Combine with Directory Busting
 ```bash
 # Find subdomains, then scan each
-python gobuster_scan.py -u http://target.com -m dns -d target.com -o json
+python pathprowler.py -u http://target.com -m dns -d target.com -o json
 
 # Extract and scan
-for subdomain in $(cat gobuster_results_*/results.json | jq -r '.results.subdomains[].path'); do
-  python gobuster_scan.py -u "http://$subdomain" -m dir
+for subdomain in $(cat pathprowler_results_*/results.json | jq -r '.results.subdomains[].path'); do
+  python pathprowler.py -u "http://$subdomain" -m dir
 done
 ```
 
