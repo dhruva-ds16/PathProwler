@@ -131,12 +131,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		case "enter":
 			if m.currentScreen == configScreen {
+				// Clear any previous error
+				m.errorMsg = ""
+				
 				// Validate and start scan
-				if m.targetInput.Value() == "" {
+				target := m.targetInput.Value()
+				if target == "" {
 					m.errorMsg = "Target URL is required!"
 					return m, nil
 				}
-				return m, m.startScan()
+				
+				// Start the scan
+				m.scanning = true
+				m.currentScreen = scanningScreen
+				return m, tea.Batch(m.spinner.Tick, m.startScan())
 			}
 
 		case "tab", "shift+tab", "up", "down":
@@ -278,8 +286,6 @@ func (m *model) startScan() tea.Cmd {
 			return errMsg(fmt.Sprintf("Failed to start scan: %v", err))
 		}
 
-		m.scanning = true
-		m.currentScreen = scanningScreen
 		m.statusMsg = "Scanning..."
 
 		// Read output line by line
