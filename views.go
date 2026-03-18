@@ -31,9 +31,7 @@ func (m model) configView() string {
 	// Input fields
 	for i := range m.inputs {
 		b.WriteString(m.inputs[i].View())
-		if i < len(m.inputs)-1 {
-			b.WriteRune('\n')
-		}
+		b.WriteString("\n")
 	}
 
 	// Error message

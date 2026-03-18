@@ -56,30 +56,32 @@ type model struct {
 }
 
 func initialModel() model {
-	// Create input fields
+	// Create input fields with proper settings
 	ti1 := textinput.New()
 	ti1.Placeholder = "http://example.com"
 	ti1.Focus()
 	ti1.CharLimit = 200
-	ti1.Width = 50
+	ti1.Width = 60
 	ti1.Prompt = "🎯 Target URL: "
+	ti1.PromptStyle = focusedStyle
+	ti1.TextStyle = focusedStyle
 
 	ti2 := textinput.New()
-	ti2.Placeholder = "50"
+	ti2.Placeholder = "50 (default)"
 	ti2.CharLimit = 4
-	ti2.Width = 50
+	ti2.Width = 60
 	ti2.Prompt = "⚡ Threads: "
 
 	ti3 := textinput.New()
-	ti3.Placeholder = "php,html,txt,asp,jsp"
+	ti3.Placeholder = "php,html,txt (optional)"
 	ti3.CharLimit = 100
-	ti3.Width = 50
+	ti3.Width = 60
 	ti3.Prompt = "📄 Extensions: "
 
 	ti4 := textinput.New()
 	ti4.Placeholder = "/usr/share/seclists/Discovery/Web-Content/raft-medium-directories.txt"
 	ti4.CharLimit = 300
-	ti4.Width = 50
+	ti4.Width = 60
 	ti4.Prompt = "📚 Wordlist: "
 
 	// Create spinner
@@ -209,11 +211,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) updateInputs(msg tea.Msg) tea.Cmd {
 	cmds := make([]tea.Cmd, len(m.inputs))
 
-	for i := range m.inputs {
-		m.inputs[i], cmds[i] = m.inputs[i].Update(msg)
-	}
+	// Only update the focused input
+	m.inputs[m.focusIndex], cmds[m.focusIndex] = m.inputs[m.focusIndex].Update(msg)
 
-	// Update individual fields
+	// Sync back to individual fields
 	m.targetInput = m.inputs[0]
 	m.threadsInput = m.inputs[1]
 	m.extensionsInput = m.inputs[2]
