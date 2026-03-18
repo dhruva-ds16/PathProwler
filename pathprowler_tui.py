@@ -186,7 +186,7 @@ class PathProwlerDashboard(App):
     }
     
     .stats-title {
-        background: linear-gradient(90deg, $accent 0%, $accent-darken-1 100%);
+        background: $accent;
         color: $text;
         padding: 1;
         text-align: center;
