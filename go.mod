@@ -1,4 +1,4 @@
-module github.com/yourusername/pathprowler
+module github.com/dhruva-ds16/PathProwler
 
 go 1.21
 
